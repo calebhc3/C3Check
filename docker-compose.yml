@@ -24,7 +24,7 @@ services:
       - .:/var/www
     command: tail -f /dev/null
     ports:
-      - "5181:5173"
+      - "5173:5173"
     networks:
       - c3check_net
 

@@ -9,7 +9,15 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
-                    {{ __("You're logged in!") }}
+                    @if(auth()->user()->hasRole('contas'))
+                        @include('dashboard.contas')
+                    @elseif(auth()->user()->hasRole('chefia'))
+                        @include('dashboard.chefia')
+                    @elseif(auth()->user()->hasRole('financeiro'))
+                        @include('dashboard.financeiro')
+                    @else
+                        <p>Bem-vindo! Nenhum painel específico foi configurado para sua role.</p>
+                    @endif
                 </div>
             </div>
         </div>
