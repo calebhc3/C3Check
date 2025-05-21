@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\NotaController;
 
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
@@ -35,7 +36,12 @@ Route::middleware('guest')->group(function () {
         ->name('password.store');
 });
 Route::middleware(['auth', 'role:contas'])->group(function () {
-    // rotas da Karina
+    Route::get('/notas', [NotaController::class, 'index'])->name('notas.index');
+    Route::get('/notas/create', [NotaController::class, 'create'])->name('notas.create');
+    Route::post('/notas', [NotaController::class, 'store'])->name('notas.store');
+    Route::get('/notas/{nota}/edit', [NotaController::class, 'edit'])->name('notas.edit');
+    Route::put('/notas/{nota}', [NotaController::class, 'update'])->name('notas.update');
+    Route::delete('/notas/{nota}', [NotaController::class, 'destroy'])->name('notas.destroy');
 });
 
 Route::middleware(['auth', 'role:chefia'])->group(function () {

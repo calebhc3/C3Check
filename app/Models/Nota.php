@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Nota extends Model
 {
@@ -26,7 +27,7 @@ class Nota extends Model
         'dados_bancarios' => 'array',
     ];
 
-    public function registros()
+    public function clientes()
     {
         return $this->hasMany(NotaCliente::class);
     }
