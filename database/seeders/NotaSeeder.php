@@ -8,26 +8,26 @@ use Illuminate\Database\Seeder;
 
 class NotaSeeder extends Seeder
 {
-public function run(): void
-{
-    $user = User::first() ?? User::factory()->create();
+    public function run(): void
+    {
+        $user = User::first() ?? User::factory()->create();
 
-    Nota::factory(10)->create([
-        'user_id' => $user->id,
-    ])->each(function ($nota) {
-        $valorTotal = 0;
+        Nota::factory(10)->create(['user_id' => $user->id])->each(function ($nota) {
+            // Somente para notas de clínica, cria registros fictícios de clientes vinculados
+            if ($nota->tipo_nota === 'clinica') {
+                $valorTotal = 0;
 
-        $registros = \App\Models\NotaCliente::factory(rand(2, 5))->make();
+                $registros = \App\Models\NotaCliente::factory(rand(2, 5))->make();
 
-        $registros->each(function ($registro) use ($nota, &$valorTotal) {
-            $nota->registros()->create($registro->toArray());
-            $valorTotal += $registro->valor;
+                $registros->each(function ($registro) use ($nota, &$valorTotal) {
+                $nota->notaClientes()->create($registro->toArray());
+                    $valorTotal += $registro->valor;
+                });
+
+                $nota->update(['valor_total' => $valorTotal]);
+            }
         });
 
-        $nota->update(['valor_total' => $valorTotal]);
-    });
-
-    $this->command->info('10 notas com registros fake criadas via factory!');
-}
-
+        $this->command->info('Notas fake (clínicas e médicos) criadas com sucesso!');
+    }
 }

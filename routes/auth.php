@@ -44,9 +44,12 @@ Route::middleware(['auth', 'role:contas'])->group(function () {
     Route::delete('/notas/{nota}', [NotaController::class, 'destroy'])->name('notas.destroy');
 });
 
-Route::middleware(['auth', 'role:chefia'])->group(function () {
-    // rotas da Ana
+Route::middleware(['auth', 'chefia'])->prefix('chefia')->name('chefia.')->group(function () {
+    Route::get('notas', [NotaController::class, 'chefiaIndex'])->name('notas.index');
+    Route::post('notas/{nota}/aprovar', [NotaController::class, 'aprovar'])->name('notas.aprovar');
+    Route::post('notas/{nota}/rejeitar', [NotaController::class, 'rejeitar'])->name('notas.rejeitar');
 });
+
 
 Route::middleware(['auth', 'role:financeiro'])->group(function () {
     // rotas do Rickelme

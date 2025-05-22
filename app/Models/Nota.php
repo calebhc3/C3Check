@@ -27,7 +27,7 @@ class Nota extends Model
         'dados_bancarios' => 'array',
     ];
 
-    public function clientes()
+    public function notaClientes()
     {
         return $this->hasMany(NotaCliente::class);
     }
@@ -36,4 +36,14 @@ class Nota extends Model
     {
         return $this->belongsTo(User::class);
     }
+    public function scopeClinicas($query)
+    {
+        return $query->where('tipo_nota', 'clinica');
+    }
+
+    public function scopeMedicos($query)
+    {
+        return $query->where('tipo_nota', 'medico');
+    }
+
 }

@@ -13,6 +13,25 @@ return new class extends Migration
     {
         Schema::create('notas', function (Blueprint $table) {
             $table->id();
+            $table->enum('tipo_nota', ['clinica', 'medico'])->default('clinica');
+            // Para médicos
+            $table->string('med_nome')->nullable();
+            $table->string('med_telefone')->nullable();
+            $table->string('med_email')->nullable();
+            $table->string('med_cliente_atendido')->nullable();
+            $table->string('med_local')->nullable();
+            $table->json('med_horarios')->nullable(); // array de horários e totais
+            $table->boolean('med_deslocamento')->default(false);
+            $table->decimal('med_valor_deslocamento', 10, 2)->default(0);
+            $table->boolean('med_cobrou_almoco')->default(false);
+            $table->decimal('med_valor_almoco', 10, 2)->default(0);
+            $table->time('med_almoco_inicio')->nullable();
+            $table->time('med_almoco_fim')->nullable();
+            $table->boolean('med_reembolso_correios')->default(false);
+            $table->decimal('med_valor_correios', 10, 2)->default(0);
+            $table->decimal('med_valor_total_final', 10, 2)->nullable(); // valor final do médico
+            $table->json('med_dados_bancarios')->nullable(); // mesmo modelo da nota normal
+            // Para clínicas
             $table->string('numero_nf');
             $table->string('prestador'); // Nome da clínica
             $table->string('cnpj')->nullable(); // Novo campo CNPJ

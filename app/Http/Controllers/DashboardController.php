@@ -13,7 +13,25 @@ class DashboardController extends Controller
         $user = Auth::user();
 
         if ($user->hasRole('contas')) {
-            $notas = \App\Models\Nota::where('user_id', $user->id)->latest()->paginate(10);
+        $notasClinicas = Nota::clinicas()
+            ->with('user') // eager loading do responsável
+            ->orderByDesc('data_emissao')
+            ->paginate(10, ['*'], 'clinicas_page');
+
+        $notasMedicos = Nota::medicos()
+            ->with('user')
+            ->orderByDesc('data_emissao')
+            ->paginate(10, ['*'], 'medicos_page');
+            return view('dashboard', compact('notasClinicas', 'notasMedicos'));
+        }
+
+        if ($user->hasRole('financeiro')) {
+            $notas = Nota::where('status', 'pendente')->with('user')->get();
+            return view('dashboard', compact('notas'));
+        }
+
+        if ($user->hasRole('chefia')) {
+            $notas = Nota::where('status', 'pendente')->with('user')->get();
             return view('dashboard', compact('notas'));
         }
 
