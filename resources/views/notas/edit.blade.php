@@ -8,100 +8,213 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+@if ($errors->any())
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <ul>
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+<form action="{{ route('notas.update', $nota->id) }}" method="POST" enctype="multipart/form-data" class="space-y-8">
+    @csrf
+    @method('PUT')
 
-                <form action="{{ route('notas.update', $nota) }}" method="POST">
-                    @csrf
-                    @method('PUT')
+    {{-- Seção: Tipo de Nota --}}
+    <div class="flex items-center justify-center mb-8">
+        <div class="inline-flex rounded-md shadow-sm" role="group">
+        <label class="px-6 py-3 text-sm font-medium rounded-l-lg border cursor-pointer
+            {{ $nota->tipo_nota === 'clinica' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-700 text-gray-900 border-gray-700' }}">
+            <input type="radio" name="tipo_nota" value="clinica" class="hidden" {{ $nota->tipo_nota === 'clinica' ? 'checked' : '' }}>
+            Clínica
+        </label>
 
-                    <!-- Dados da Nota -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <label class="px-6 py-3 text-sm font-medium rounded-r-lg border cursor-pointer
+            {{ $nota->tipo_nota === 'medico' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-700 text-gray-900 border-gray-700' }}">
+            <input type="radio" name="tipo_nota" value="medico" class="hidden" {{ $nota->tipo_nota === 'medico' ? 'checked' : '' }}>
+            Médico
+        </label>
+        </div>
+    </div>
 
-                        <div>
-                            <label for="prestador" class="block font-medium text-gray-700 dark:text-gray-300">Prestador</label>
-                            <input type="text" name="prestador" id="prestador" value="{{ old('prestador', $nota->prestador) }}" class="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:text-gray-100" required>
-                        </div>
+    {{-- Formulário Clínica --}}
+    <div id="clinica-form" class="{{ $nota->tipo_nota === 'clinica' ? '' : 'hidden' }}">
+        <div class="border-b border-gray-300 pb-6">
+            <h3 class="text-lg font-semibold text-gray-700 mb-4">Informações da Nota</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <x-input-label for="numero_nf" value="Número da NF" />
+                <x-text-input name="numero_nf" id="numero_nf" class="w-full" value="{{ $nota->numero_nf }}" required />
 
-                        <div>
-                            <label for="cnpj" class="block font-medium text-gray-700 dark:text-gray-300">CNPJ</label>
-                            <input type="text" name="cnpj" id="cnpj" value="{{ old('cnpj', $nota->cnpj) }}" class="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:text-gray-100">
-                        </div>
+                <x-input-label for="prestador" value="Prestador" />
+                <x-text-input name="prestador" id="prestador" class="w-full" value="{{ $nota->prestador }}" required />
 
-                        <div>
-                            <label for="numero_nf" class="block font-medium text-gray-700 dark:text-gray-300">Número NF</label>
-                            <input type="text" name="numero_nf" id="numero_nf" value="{{ old('numero_nf', $nota->numero_nf) }}" class="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:text-gray-100" required>
-                        </div>
+                <x-input-label for="cnpj" value="CNPJ" />
+                <x-text-input name="cnpj" id="cnpj" class="w-full" value="{{ $nota->cnpj }}" />
 
-                        <div>
-                            <label for="valor_total" class="block font-medium text-gray-700 dark:text-gray-300">Valor Líquido</label>
-                            <input type="number" step="0.01" name="valor_total" id="valor_total" value="{{ old('valor_total', $nota->valor_total) }}" class="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:text-gray-100" required>
-                        </div>
+                <x-input-label for="vencimento_original" value="Vencimento Original" />
+                <x-text-input name="vencimento_original" id="vencimento_original" type="date" class="w-full" value="{{ $nota->vencimento_original }}" />
 
-                        <div>
-                            <label for="vencimento_original" class="block font-medium text-gray-700 dark:text-gray-300">Vencimento</label>
-                            <input type="date" name="vencimento_original" id="vencimento_original" value="{{ old('vencimento_original', $nota->vencimento_original ? \Carbon\Carbon::parse($nota->vencimento_original)->format('Y-m-d') : '') }}" class="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:text-gray-100" required>
-                        </div>
+                <x-input-label for="data_entregue_financeiro" value="Data Entregue ao Financeiro" />
+                <x-text-input name="data_entregue_financeiro" id="data_entregue_financeiro" type="date" class="w-full" value="{{ $nota->data_entregue_financeiro }}" />
 
-                        <div class="flex items-center space-x-2 mt-6">
-                            <input type="checkbox" name="taxa_correio" id="taxa_correio" value="1" {{ old('taxa_correio', $nota->taxa_correio) ? 'checked' : '' }} class="h-5 w-5 text-blue-600">
-                            <label for="taxa_correio" class="font-medium text-gray-700 dark:text-gray-300">Taxa de Correio</label>
-                        </div>
+                <x-input-label for="mes" value="Mês de Referência (MM/AAAA)" />
+                <x-text-input name="mes" id="mes" placeholder="MM/AAAA" class="w-full" value="{{ $nota->mes }}" />
 
-                        <div>
-                            <label for="valor_taxa_correio" class="block font-medium text-gray-700 dark:text-gray-300">Valor Taxa de Correio</label>
-                            <input type="number" step="0.01" name="valor_taxa_correio" id="valor_taxa_correio" value="{{ old('valor_taxa_correio', $nota->valor_taxa_correio) }}" class="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:text-gray-100">
-                        </div>
+                <x-input-label for="vencimento_prorrogado" value="Prorrogação (se houver)" />
+                <x-text-input name="vencimento_prorrogado" id="vencimento_prorrogado" type="date" class="w-full" value="{{ $nota->vencimento_prorrogado }}" />
 
-                        <div>
-                            <label for="data_entregue_financeiro" class="block font-medium text-gray-700 dark:text-gray-300">Data Entregue para Financeiro</label>
-                            <input type="date" name="data_entregue_financeiro" id="data_entregue_financeiro" value="{{ old('data_entregue_financeiro', $nota->data_entregue_financeiro ? $nota->data_entregue_financeiro->format('Y-m-d') : '') }}" class="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:text-gray-100">
-                        </div>
-
-                        <div>
-                            <label for="data_emissao" class="block font-medium text-gray-700 dark:text-gray-300">Mês (Data Emissão)</label>
-                            <input type="month" name="data_emissao" id="data_emissao" value="{{ old('vencimento_original', $nota->data_emissao ? \Carbon\Carbon::parse($nota->data_emissao)->format('Y-m-d') : '') }}" class="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:text-gray-100">
-                        </div>
-
+                <div class="md:col-span-2">
+                    <x-input-label for="taxa_correio" value="Taxa de Correio?" />
+                    <div class="flex items-center mt-2">
+                    <input type="checkbox" name="taxa_correio" id="taxa_correio" 
+                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                        {{ old('taxa_correio', $nota->taxa_correio) ? 'checked' : '' }}>
+                        <x-input-label for="valor_taxa_correio" value="Valor da Taxa (R$)" class="ml-4 mr-2" />
+                        <x-text-input name="valor_taxa_correio" id="valor_taxa_correio" type="number" step="0.01"
+                                      class="w-32"
+                                      value="{{ $nota->valor_taxa_correio }}" />
                     </div>
+                </div>
 
-                    <hr class="my-6 border-gray-300 dark:border-gray-600">
+                <x-input-label for="arquivo_nf" value="Arquivo da NF (PDF)" />
+                <input type="file" name="arquivo_nf" id="arquivo_nf" accept="application/pdf" class="w-full dark:bg-gray-700 dark:text-white border-gray-300 rounded-md" />
+                @if ($nota->arquivo_nf)
+                    <p class="text-sm text-gray-500 mt-1">Atual: <a href="{{ asset('storage/' . $nota->arquivo_nf) }}" class="text-indigo-600 underline" target="_blank">Ver Arquivo</a></p>
+                @endif
+            </div>
+        </div>
 
-                    <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Responsável</h3>
-
-                    <div class="mb-6">
-                        <input type="text" name="user_name" id="user_name" value="{{ old('user_name', $nota->user->name ?? '-') }}" class="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:text-gray-100" disabled>
+        {{-- Clientes Atendidos --}}
+        <div class="border-b border-gray-300 pb-6">
+            <h3 class="text-lg font-semibold text-gray-700 mb-4">Clientes Atendidos</h3>
+            <div id="clientes-wrapper" class="space-y-6">
+                @foreach ($nota->notaClientes as $index => $cliente)
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 cliente-item bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner">
+                        <div>
+                            <x-input-label value="Cliente Atendido" />
+                            <x-text-input name="clientes[{{ $index }}][cliente_atendido]" class="w-full" value="{{ $cliente->cliente_atendido }}" />
+                        </div>
+                        <div>
+                            <x-input-label value="Valor (R$)" />
+                            <x-text-input name="clientes[{{ $index }}][valor]" type="number" step="0.01" class="w-full" value="{{ $cliente->valor }}" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <x-input-label value="Observação" />
+                            <textarea name="clientes[{{ $index }}][observacao]" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-600 dark:text-white">{{ $cliente->observacao }}</textarea>
+                        </div>
                     </div>
+                @endforeach
+            </div>
+            <div class="mt-4">
+                <button type="button" id="add-cliente" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-md">
+                    + Adicionar Cliente
+                </button>
+            </div>
+        </div>
 
-                    <hr class="my-6 border-gray-300 dark:border-gray-600">
+        <x-input-label for="valor_total" class="mt-5" value="Valor Total (R$)" />
+        <x-text-input name="valor_total" id="valor_total" class="w-full mt-1" required type="number" step="0.01" value="{{ $nota->valor_total }}" />
 
-                    {{-- Se tiver relação clientes, aqui você edita eles --}}
+        <x-input-label for="tipo_pagamento" class="mt-5" value="Tipo de Pagamento" />
+        <select name="tipo_pagamento" id="tipo_pagamento" class="w-full mt-1 mb-5 border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+            <option value="">Selecione</option>
+            <option value="boleto" {{ $nota->tipo_pagamento === 'boleto' ? 'selected' : '' }}>Boleto</option>
+            <option value="deposito" {{ $nota->tipo_pagamento === 'deposito' ? 'selected' : '' }}>Depósito</option>
+            <option value="pix" {{ $nota->tipo_pagamento === 'pix' ? 'selected' : '' }}>Pix</option>
+        </select>
 
-                    @if ($nota->clientes && $nota->clientes->count() > 0)
-                        <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Clientes da Nota</h3>
+        <x-input-label for="dados_bancarios" value="Dados Bancários (se aplicável)" />
+        <textarea name="dados_bancarios" id="dados_bancarios" rows="3" class="w-full mt-1 border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white">{{ $nota->dados_bancarios }}</textarea>
 
-                        @foreach($nota->clientes as $index => $cliente)
-                            <div class="mb-6 p-4 border rounded bg-gray-50 dark:bg-gray-700">
-                                <h4 class="font-semibold mb-2 text-gray-900 dark:text-gray-100">Cliente #{{ $index + 1 }}</h4>
+        <x-input-label for="observacao" value="Observação" />
+        <textarea name="observacao" id="observacao" rows="3" class="w-full mt-1 border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white">{{ $nota->observacao }}</textarea>
+    </div>
 
-                                <input type="hidden" name="clientes[{{ $index }}][id]" value="{{ $cliente->id }}">
+    {{-- Médico --}}
+    <div id="medico-form" class="{{ $nota->tipo_nota === 'medico' ? '' : 'hidden' }}">
+        <div class="border-b border-gray-300 pb-6">
+            <h3 class="text-lg font-semibold text-gray-700 mb-4">Informações do Médico</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <x-input-label for="med_nome" value="Nome do Médico" />
+                <x-text-input name="med_nome" id="med_nome" class="w-full" value="{{ $nota->med_nome }}" />
 
-                                <label for="clientes[{{ $index }}][nome]" class="block mb-1 font-medium text-gray-700 dark:text-gray-300">Nome</label>
-                                <input type="text" name="clientes[{{ $index }}][nome]" id="clientes[{{ $index }}][nome]" value="{{ old("clientes.$index.nome", $cliente->nome) }}" class="w-full border rounded px-3 py-2 mb-3 dark:bg-gray-700 dark:text-gray-100" required>
+                <x-input-label for="med_numero_nf" value="Número da NF" />
+                <x-text-input name="med_numero_nf" id="med_numero_nf" class="w-full" value="{{ $nota->numero_nf }}" required />
 
-                                <label for="clientes[{{ $index }}][cpf]" class="block mb-1 font-medium text-gray-700 dark:text-gray-300">CPF</label>
-                                <input type="text" name="clientes[{{ $index }}][cpf]" id="clientes[{{ $index }}][cpf]" value="{{ old("clientes.$index.cpf", $cliente->cpf) }}" class="w-full border rounded px-3 py-2 mb-3 dark:bg-gray-700 dark:text-gray-100" required>
+                <x-input-label for="med_vencimento_original" value="Vencimento Original" />
+                <x-text-input name="med_vencimento_original" id="med_vencimento_original" type="date" class="w-full" value="{{ $nota->vencimento_original }}" />
 
-                                {{-- Adicione mais campos aqui se precisar --}}
-                            </div>
-                        @endforeach
-                    @endif
+                <x-input-label for="med_mes" value="Mês de Referência (MM/AAAA)" />
+                <x-text-input name="med_mes" id="med_mes" placeholder="MM/AAAA" class="w-full" value="{{ $nota->mes }}" />
 
-                    <div class="flex justify-end">
-                        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
-                            Atualizar Nota
-                        </button>
-                    </div>
+                <x-input-label for="med_vencimento_prorrogado" value="Prorrogação (se houver)" />
+                <x-text-input name="med_vencimento_prorrogado" id="med_vencimento_prorrogado" type="date" class="w-full" value="{{ $nota->vencimento_prorrogado }}" />
 
-                </form>
+                <x-input-label for="med_telefone" value="Telefone Financeiro" />
+                <x-text-input name="med_telefone" id="med_telefone" class="w-full" value="{{ $nota->med_telefone }}" />
+
+                <x-input-label for="med_email" value="Email Financeiro" />
+                <x-text-input name="med_email" id="med_email" type="email" class="w-full" value="{{ $nota->med_email }}" />
+
+                <x-input-label for="med_cliente_atendido" value="Cliente Atendido" />
+                <x-text-input name="med_cliente_atendido" id="med_cliente_atendido" class="w-full" value="{{ $nota->med_cliente_atendido }}" />
+
+                <x-input-label for="med_local" value="Local de Atendimento" />
+                <x-text-input name="med_local" id="med_local" class="w-full" value="{{ $nota->med_local }}" />
+
+                <div id="med-horarios-wrapper" class="w-full space-y-4 md:col-span-2">
+        @php
+            $horariosRaw = old('med_horarios', $nota->med_horarios ?? []);
+            $horarios = is_string($horariosRaw) ? json_decode($horariosRaw, true) : $horariosRaw;
+        @endphp
+
+    @foreach ($horarios as $index => $horario)
+<div class="grid grid-cols-1 md:grid-cols-12 gap-4 horario-item bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner">
+    <div class="md:col-span-2">
+        <x-input-label value="Data" />
+        <x-text-input name="med_horarios[{{ $index }}][data]" type="date" class="w-full" value="{{ $horario['data'] ?? '' }}" required />
+    </div>
+    <div class="md:col-span-2">
+        <x-input-label value="Entrada" />
+        <x-text-input name="med_horarios[{{ $index }}][entrada]" type="time" class="w-full entrada" value="{{ $horario['entrada'] ?? '' }}" required />
+    </div>
+    <div class="md:col-span-2">
+        <x-input-label value="Saída Almoço" />
+        <x-text-input name="med_horarios[{{ $index }}][saida_almoco]" type="time" class="w-full saida-almoco" value="{{ $horario['saida_almoco'] ?? '' }}" required />
+    </div>
+    <div class="md:col-span-2">
+        <x-input-label value="Retorno Almoço" />
+        <x-text-input name="med_horarios[{{ $index }}][retorno_almoco]" type="time" class="w-full retorno-almoco" value="{{ $horario['retorno_almoco'] ?? '' }}" required />
+    </div>
+    <div class="md:col-span-2">
+        <x-input-label value="Saída" />
+        <x-text-input name="med_horarios[{{ $index }}][saida]" type="time" class="w-full saida" value="{{ $horario['saida'] ?? '' }}" required />
+    </div>
+    <div class="md:col-span-2">
+        <x-input-label value="Valor por Hora (R$)" />
+        <x-text-input name="med_horarios[{{ $index }}][valor_hora]" type="number" step="0.01" class="w-full valor-hora" value="{{ $horario['valor_hora'] ?? '' }}" required />
+    </div>
+    <div class="md:col-span-4">
+        <x-input-label value="Total (R$)" />
+        <x-text-input name="med_horarios[{{ $index }}][total]" type="number" step="0.01" class="w-full total" value="{{ $horario['total'] ?? '' }}" readonly />
+    </div>
+</div>
+
+    @endforeach
+</div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-8">
+        <button type="submit" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md">
+            Salvar Alterações
+        </button>
+    </div>
+</form>
+
 
             </div>
         </div>

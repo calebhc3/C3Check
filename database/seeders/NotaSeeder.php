@@ -12,7 +12,7 @@ class NotaSeeder extends Seeder
     {
         $user = User::first() ?? User::factory()->create();
 
-        Nota::factory(10)->create(['user_id' => $user->id])->each(function ($nota) {
+        Nota::factory(50)->create(['user_id' => $user->id])->each(function ($nota) {
             // Somente para notas de clínica, cria registros fictícios de clientes vinculados
             if ($nota->tipo_nota === 'clinica') {
                 $valorTotal = 0;
