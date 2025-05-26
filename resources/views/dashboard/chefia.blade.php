@@ -1,1 +1,1 @@
-@include('chefia.notas.aprovacao')
+@include('chefia.notas.index')

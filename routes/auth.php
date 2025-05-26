@@ -45,15 +45,18 @@ Route::middleware(['auth', 'role:contas'])->group(function () {
 });
 
 Route::middleware(['auth', 'chefia'])->prefix('chefia')->name('chefia.')->group(function () {
-    Route::get('notas', [NotaController::class, 'chefiaIndex'])->name('notas.index');
-    Route::post('notas/{nota}/aprovar', [NotaController::class, 'aprovar'])->name('notas.aprovar');
-    Route::post('notas/{nota}/rejeitar', [NotaController::class, 'rejeitar'])->name('notas.rejeitar');
+
 });
 
+    Route::post('notas/{nota}/aprovar', [NotaController::class, 'aprovar'])->name('chefia.notas.aprovar');
+    Route::post('notas/{nota}/rejeitar', [NotaController::class, 'rejeitar'])->name('chefia.notas.rejeitar');
 
 Route::middleware(['auth', 'role:financeiro'])->group(function () {
     // rotas do Rickelme
 });
+
+    Route::post('notas/{nota}/aceitar', [NotaController::class, 'aceitar'])->name('chefia.notas.aceitar');
+    Route::post('notas/{nota}/recusar', [NotaController::class, 'recusar'])->name('chefia.notas.recusar');
 
 Route::middleware('auth')->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)

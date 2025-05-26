@@ -1,0 +1,1 @@
+@include('financeiro.notas.index')

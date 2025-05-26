@@ -394,13 +394,8 @@ protected function updateClinica(Request $request, Nota $nota)
             abort(403, 'Acesso negado.');
         }
     }
-    public function aprovacaoIndex()
-    {
-        $notas = Nota::whereNull('aprovado_chefia_em')->orderBy('created_at', 'desc')->paginate(10);
 
-        return view('chefia.notas.aprovacao', compact('notas'));
-    }
-
+    
     public function aprovar(Request $request, Nota $nota)
     {
         if ($nota->aprovado_chefia_em) {
@@ -410,7 +405,7 @@ protected function updateClinica(Request $request, Nota $nota)
         $nota->update([
             'aprovado_chefia_em' => now(),
             'aprovado_chefia_por' => auth()->id(),
-            'status' => 'aprovada_chefia',
+            'status' => 'confirmada_financeiro',
         ]);
 
         return redirect()->back()->with('success', 'Nota aprovada com sucesso!');
@@ -425,6 +420,36 @@ protected function updateClinica(Request $request, Nota $nota)
         $nota->update([
             'aprovado_chefia_em' => now(),
             'aprovado_chefia_por' => auth()->id(),
+            'status' => 'rejeitada',
+        ]);
+
+        return redirect()->back()->with('success', 'Nota rejeitada com sucesso!');
+    }
+
+    public function aceitar(Request $request, Nota $nota)
+    {
+        if ($nota->confirmado_financeiro_em) {
+            return redirect()->back()->with('error', 'Nota já aprovada ou rejeitada.');
+        }
+
+        $nota->update([
+            'confirmado_financeiro_em' => now(),
+            'confirmado_financeiro_por' => auth()->id(),
+            'status' => 'aprovada_chefia',
+        ]);
+
+        return redirect()->back()->with('success', 'Nota aprovada com sucesso!');
+    }
+
+    public function recusar(Request $request, Nota $nota)
+    {
+        if ($nota->aprovada_financeiro_em) {
+            return redirect()->back()->with('error', 'Nota já aprovada ou rejeitada.');
+        }
+
+        $nota->update([
+            'confirmado_financeiro_em' => now(),
+            'confirmado_financeiro_por' => auth()->id(),
             'status' => 'rejeitada',
         ]);
 

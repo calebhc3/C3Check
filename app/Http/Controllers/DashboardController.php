@@ -26,14 +26,30 @@ class DashboardController extends Controller
         }
 
         if ($user->hasRole('financeiro')) {
-            $notas = Nota::where('status', 'pendente')->with('user')->get();
-            return view('dashboard', compact('notas'));
+            $notasPendentes = Nota::whereNotNull('aprovado_chefia_em')
+                        ->whereNull('confirmado_financeiro_em')
+                        ->orderBy('created_at', 'desc')
+                        ->paginate(10, ['*'], 'pendentes');
+                        
+            $historicoNotas = Nota::whereNotNull('confirmado_financeiro_em')
+                        ->orderBy('confirmado_financeiro_em', 'desc')
+                        ->paginate(10, ['*'], 'historico');
+
+            return view('dashboard', compact('notasPendentes', 'historicoNotas'));
         }
 
         if ($user->hasRole('chefia')) {
-            $notas = Nota::where('status', 'pendente')->with('user')->get();
-            return view('dashboard', compact('notas'));
+            $notasPendentes = Nota::whereNull('aprovado_chefia_em')
+                ->orderBy('created_at', 'desc')
+                ->paginate(10, ['*'], 'pendentes');
+
+            $historicoNotas = Nota::whereNotNull('aprovado_chefia_em')
+                ->orderBy('aprovado_chefia_em', 'desc')
+                ->paginate(10, ['*'], 'historico');
+
+            return view('dashboard', compact('notasPendentes', 'historicoNotas'));
         }
+
 
         return view('dashboard');
     }
