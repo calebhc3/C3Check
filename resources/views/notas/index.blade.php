@@ -10,7 +10,31 @@
                 <a href="{{ route('notas.create') }}" class="mb-4 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
                     Nova Nota
                 </a>
+<form method="GET" action="{{ route('dashboard') }}" class="mb-6 flex flex-wrap gap-4 items-end">
+    <div>
+        <label for="cnpj" class="block text-sm font-medium text-gray-700 dark:text-gray-300">CNPJ</label>
+        <input type="text" name="cnpj" id="cnpj" value="{{ request('cnpj') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+    </div>
 
+    <div>
+        <label for="numero_nf" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Número NF</label>
+        <input type="text" name="numero_nf" id="numero_nf" value="{{ request('numero_nf') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+    </div>
+
+    <div>
+        <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+        <select name="status" id="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <option value="">Todos</option>
+            @foreach (['lancada', 'aprovada_chefia', 'confirmada_financeiro', 'rejeitada'] as $status)
+                <option value="{{ $status }}" @if(request('status') === $status) selected @endif>{{ ucfirst(str_replace('_', ' ', $status)) }}</option>
+            @endforeach
+        </select>
+    </div>
+
+    <div class="self-end">
+        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Filtrar</button>
+    </div>
+</form>
                 <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Notas de Clínicas</h3>
                 @if ($notasClinicas->isEmpty())
                     <p class="text-gray-600 dark:text-gray-300">Nenhuma nota de clínica cadastrada.</p>
@@ -24,9 +48,7 @@
         <th class="px-4 py-3">NF</th>
         <th class="px-4 py-3">Valor Líquido</th>
         <th class="px-4 py-3">Vencimento</th>
-        <th class="px-4 py-3">Data Entregue para Financeiro</th>
-        <th class="px-4 py-3">Mês</th>
-        <th class="px-4 py-3">Responsável</th>
+        <th class="px-4 py-3">Status</th>
         <th class="px-4 py-3 text-center">Ações</th>
     </tr>
 </thead>
@@ -38,9 +60,21 @@
             <td class="px-4 py-2">{{ $nota->numero_nf }}</td>
             <td class="px-4 py-2">R$ {{ number_format($nota->valor_total, 2, ',', '.') }}</td>
             <td class="px-4 py-2">{{ \Carbon\Carbon::parse($nota->vencimento_original)->format('d/m/Y') }}</td>
-            <td class="px-4 py-2">{{ $nota->data_entregue_financeiro ? \Carbon\Carbon::parse($nota->data_entregue_financeiro)->format('d/m/Y') : '-' }}</td>
-            <td class="px-4 py-2">{{ $nota->data_emissao ? \Carbon\Carbon::parse($nota->data_emissao)->format('m/Y') : '-' }}</td>
-            <td class="px-4 py-2">{{ $nota->user->name ?? '-' }}</td>
+<td class="px-4 py-2">
+    @php
+        $statusColors = [
+            'lancada' => 'bg-gray-200 text-gray-800',
+            'aprovada_chefia' => 'bg-blue-200 text-blue-800',
+            'confirmada_financeiro' => 'bg-green-200 text-green-800',
+            'rejeitada' => 'bg-red-200 text-red-800',
+        ];
+        $statusLabel = ucfirst(str_replace('_', ' ', $nota->status));
+    @endphp
+
+    <span class="px-2 py-1 text-sm font-semibold rounded-full {{ $statusColors[$nota->status] ?? 'bg-gray-100 text-gray-700' }}">
+        {{ $statusLabel }}
+    </span>
+</td>
             <td class="px-4 py-2 text-center space-x-2">
                 <a href="{{ route('notas.edit', $nota) }}" class="text-blue-600 hover:underline">Editar</a>
                 <form action="{{ route('notas.destroy', $nota) }}" method="POST" class="inline-block" onsubmit="return confirm('Tem certeza que deseja excluir?')">
@@ -69,7 +103,7 @@
         <th class="px-4 py-3">NF</th>
         <th class="px-4 py-3">Valor da Nota</th>
         <th class="px-4 py-3">Vencimento</th>
-        <th class="px-4 py-3">Responsável</th>
+        <th class="px-4 py-3">Status</th>
         <th class="px-4 py-3 text-center">Ações</th>
     </tr>
 </thead>
@@ -80,8 +114,21 @@
             <td class="px-4 py-2">{{ $nota->numero_nf }}</td>
             <td class="px-4 py-2">R$ {{ number_format($nota->valor_total, 2, ',', '.') }}</td>
             <td class="px-4 py-2">{{ $nota->vencimento_original ? \Carbon\Carbon::parse($nota->vencimento_original)->format('d/m/Y') : '-' }}</td>
-            <td class="px-4 py-2">{{ $nota->user->name ?? '-' }}</td>
-            <td class="px-4 py-2 text-center space-x-2">
+<td class="px-4 py-2">
+    @php
+        $statusColors = [
+            'lancada' => 'bg-gray-200 text-gray-800',
+            'aprovada_chefia' => 'bg-blue-200 text-blue-800',
+            'confirmada_financeiro' => 'bg-green-200 text-green-800',
+            'rejeitada' => 'bg-red-200 text-red-800',
+        ];
+        $statusLabel = ucfirst(str_replace('_', ' ', $nota->status));
+    @endphp
+
+    <span class="px-2 py-1 text-sm font-semibold rounded-full {{ $statusColors[$nota->status] ?? 'bg-gray-100 text-gray-700' }}">
+        {{ $statusLabel }}
+    </span>
+</td>            <td class="px-4 py-2 text-center space-x-2">
                 <a href="{{ route('notas.edit', $nota) }}" class="text-blue-600 hover:underline">Editar</a>
                 <form action="{{ route('notas.destroy', $nota) }}" method="POST" class="inline-block" onsubmit="return confirm('Tem certeza que deseja excluir?')">
                     @csrf
