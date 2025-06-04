@@ -58,6 +58,8 @@ Route::middleware(['auth', 'role:financeiro'])->group(function () {
     Route::post('notas/{nota}/aceitar', [NotaController::class, 'aceitar'])->name('chefia.notas.aceitar');
     Route::post('notas/{nota}/recusar', [NotaController::class, 'recusar'])->name('chefia.notas.recusar');
 
+    Route::get('/notas/{nota}/comprovante', [NotaController::class, 'showComprovante'])->name('notas.comprovante')->middleware('auth');
+
 Route::middleware('auth')->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');

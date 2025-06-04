@@ -410,9 +410,13 @@ protected function updateClinica(Request $request, Nota $nota)
 
         return redirect()->back()->with('success', 'Nota aprovada com sucesso!');
     }
-
+    
     public function rejeitar(Request $request, Nota $nota)
     {
+        $request->validate([
+            'motivo_rejeicao' => 'required|string|min:10|max:500'
+        ]);
+
         if ($nota->aprovado_chefia_em) {
             return redirect()->back()->with('error', 'Nota já aprovada ou rejeitada.');
         }
@@ -421,6 +425,7 @@ protected function updateClinica(Request $request, Nota $nota)
             'aprovado_chefia_em' => now(),
             'aprovado_chefia_por' => auth()->id(),
             'status' => 'rejeitada',
+            'motivo_rejeicao_chefia' => $request->motivo_rejeicao
         ]);
 
         return redirect()->back()->with('success', 'Nota rejeitada com sucesso!');
@@ -428,17 +433,26 @@ protected function updateClinica(Request $request, Nota $nota)
 
     public function aceitar(Request $request, Nota $nota)
     {
+        $request->validate([
+            'comprovante' => 'required|file|mimes:pdf,jpg,png|max:2048'
+        ]);
+
         if ($nota->confirmado_financeiro_em) {
-            return redirect()->back()->with('error', 'Nota já aprovada ou rejeitada.');
+            return redirect()->back()->with('error', 'Nota já processada.');
         }
+
+        // Upload do comprovante
+        $comprovantePath = $request->file('comprovante')->store('comprovantes');
 
         $nota->update([
             'confirmado_financeiro_em' => now(),
             'confirmado_financeiro_por' => auth()->id(),
-            'status' => 'aprovada_chefia',
+            'status' => 'finalizada',
+            'comprovante_path' => $comprovantePath,
+            'observacao_financeiro' => $request->observacao
         ]);
 
-        return redirect()->back()->with('success', 'Nota aprovada com sucesso!');
+        return redirect()->back()->with('success', 'Nota finalizada com sucesso!');
     }
 
     public function recusar(Request $request, Nota $nota)
@@ -454,6 +468,15 @@ protected function updateClinica(Request $request, Nota $nota)
         ]);
 
         return redirect()->back()->with('success', 'Nota rejeitada com sucesso!');
+    }
+
+    public function showComprovante(Nota $nota)
+    {
+        if (!$nota->comprovante_path) {
+            abort(404);
+        }
+
+        return response()->file(storage_path('app/' . $nota->comprovante_path));
     }
 
 }

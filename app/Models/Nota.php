@@ -50,6 +50,7 @@ class Nota extends Model
         'med_valor_correios',
         'med_valor_total_final',
         'med_dados_bancarios',
+        'motivo_rejeicao_chefia',
     ];
 
     protected $casts = [
