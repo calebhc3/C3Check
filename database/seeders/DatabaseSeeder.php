@@ -15,7 +15,6 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
         $this->call(UserRoleSeeder::class);
-        $this->call(NotaSeeder::class);
 
         User::factory()->create([
             'name' => 'Test User',
