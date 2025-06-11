@@ -52,43 +52,80 @@ public function store(Request $request)
 
 protected function storeClinica(Request $request)
 {
+    // Validar os dados do request
     $data = $request->validate([
         'tipo_nota' => 'required|in:clinica,medico',
         'numero_nf' => 'required|string|max:50',
         'prestador' => 'string|max:255',
         'cnpj' => 'nullable|string|max:18',
-        'valor_total' => 'numeric|min:0',
-        'data_emissao' => 'date',
-        'vencimento_original' => 'date',
+        'valor_total' => 'required|numeric|min:0',
+        'data_emissao' => 'nullable|date',
+        'vencimento_original' => 'required|date',
         'vencimento_prorrogado' => 'nullable|date',
         'data_entregue_financeiro' => 'nullable|date',
         'mes' => 'nullable|string|max:7',
         'tipo_pagamento' => 'nullable|in:boleto,deposito,pix',
         'dados_bancarios' => 'nullable|string',
-        'taxa_correio' => 'nullable|boolean',
-        'valor_taxa_correio' => 'nullable|numeric|min:0',
-        'arquivo_nf' => 'nullable|file|mimes:pdf|max:5120',
-        'clientes' => 'array|min:1',
-        'clientes.*.cliente_atendido' => 'string|max:255',
-        'clientes.*.valor' => 'numeric|min:0',
+        'taxa_correio' => 'sometimes', // Alterado de 'accepted' para 'sometimes'
+        'valor_taxa_correio' => 'nullable|numeric|min:0|required_if:taxa_correio,on',
+        'arquivo_nf.*' => 'file|mimes:pdf|max:20480',
+        'clientes' => 'required|array|min:1',
+        'clientes.*.cliente_atendido' => 'required|string|max:255',
+        'clientes.*.valor' => 'required|numeric|min:0',
         'clientes.*.observacao' => 'nullable|string',
+        'glosar' => 'sometimes|boolean',
+        'glosa_valor' => 'nullable|numeric|min:0|required_if:glosar,1',
+        'glosa_motivo' => 'nullable|string|required_if:glosar,1',
     ]);
 
-    // Processar arquivo
-    if ($request->hasFile('arquivo_nf')) {
-        $data['arquivo_nf'] = $request->file('arquivo_nf')->store('notas', 'public');
+    // Tratar o checkbox taxa_correio
+    $data['taxa_correio'] = $request->has('taxa_correio') ? 1 : 0;
+    
+    // Se não houver taxa de correio, zerar o valor
+    if (!$data['taxa_correio']) {
+        $data['valor_taxa_correio'] = 0;
     }
 
-    // Converter clientes para JSON
-    $data['clientes_atendidos'] = json_encode($data['clientes']);
-    unset($data['clientes']);
+if ($request->hasFile('arquivo_nf')) {
+    $ano = now()->format('Y');
+    $mes = now()->format('m');
 
-    // Adicionar dados do usuário
+    $caminhosArquivos = [];
+
+    foreach ($request->file('arquivo_nf') as $arquivo) {
+        if ($arquivo->isValid()) {
+            $fileName = 'NF_' . $request->numero_nf . '_' . time() . '_' . uniqid() . '.' . $arquivo->getClientOriginalExtension();
+            $path = $arquivo->storeAs("notas/$ano/$mes", $fileName, 'public');
+            $caminhosArquivos[] = $path;
+        }
+    }
+
+    // Salvar como JSON no banco (ajuste o tipo do campo no DB pra `TEXT`)
+    $data['arquivo_nf'] = json_encode($caminhosArquivos);
+}
+
+
+    // Dados extras da nota
     $data['user_id'] = auth()->id();
     $data['status'] = 'lancada';
 
+    // Tratar a glosa
+    $glosar = $request->boolean('glosar');
+    $data['glosar'] = $glosar;
+    $data['glosa_valor'] = $glosar ? $request->input('glosa_valor') : 0;
+    $data['glosa_motivo'] = $glosar ? $request->input('glosa_motivo') : null;
+
+    // Extrair os dados dos clientes antes de limpar o array
+    $clientes = $data['clientes'];
+    unset($data['clientes']);
+
     // Criar a nota
     $nota = Nota::create($data);
+
+    // Salvar os clientes no relacionamento
+    foreach ($clientes as $clienteData) {
+        $nota->notaClientes()->create($clienteData);
+    }
 
     return redirect()->route('dashboard')->with('success', 'Nota de clínica cadastrada com sucesso!');
 }
@@ -97,30 +134,30 @@ protected function storeMedico(Request $request)
 {
     // Validação mais robusta
     $validated = $request->validate([
-        'tipo_nota' => 'required|in:clinica,medico',
-        'med_nome' => 'required|string|max:255',
+        'tipo_nota' => 'in:clinica,medico',
+        'med_nome' => 'string|max:255',
         'med_telefone' => 'nullable|string|max:20',
         'med_email' => 'nullable|email|max:255',
-        'med_cliente_atendido' => 'required|string|max:255',
+        'med_cliente_atendido' => 'string|max:255',
         'med_local' => 'nullable|string|max:255',
-        'med_horarios' => 'required|array|min:1',
-        'med_horarios.*.data' => 'required|date',
-        'med_horarios.*.entrada' => 'required|date_format:H:i',
+        'med_horarios' => 'array|min:1',
+        'med_horarios.*.data' => 'date',
+        'med_horarios.*.entrada' => 'date_format:H:i',
         'med_horarios.*.saida_almoco' => 'nullable|date_format:H:i',
         'med_horarios.*.retorno_almoco' => 'nullable|date_format:H:i',
-        'med_horarios.*.saida' => 'required|date_format:H:i',
-        'med_horarios.*.valor_hora' => 'required|numeric|min:0',
-        'med_horarios.*.total' => 'required|numeric|min:0',
+        'med_horarios.*.saida' => 'date_format:H:i',
+        'med_horarios.*.valor_hora' => 'numeric|min:0',
+        'med_horarios.*.total' => 'numeric|min:0',
         'med_deslocamento' => 'nullable|boolean',
         'med_valor_deslocamento' => 'nullable|required_if:med_deslocamento,1|numeric|min:0',
         'med_cobrou_almoco' => 'nullable|boolean',
         'med_valor_almoco' => 'nullable|required_if:med_cobrou_almoco,1|numeric|min:0',
         'med_reembolso_correios' => 'nullable|boolean',
         'med_valor_correios' => 'nullable|required_if:med_reembolso_correios,1|numeric|min:0',
-        'med_valor_total_final' => 'required|numeric|min:0',
+        'med_valor_total_final' => 'numeric|min:0',
         'med_dados_bancarios' => 'nullable|string',
-        'med_numero_nf' => 'required|string|max:255',
-        'med_vencimento_original' => 'required|date',
+        'med_numero_nf' => 'string|max:255',
+        'med_vencimento_original' => 'date',
         'med_mes' => 'nullable|string|max:50',
         'med_vencimento_prorrogado' => 'nullable|date',
         'med_tipo_pagamento' => 'nullable|string|max:100',
@@ -167,6 +204,8 @@ protected function storeMedico(Request $request)
 
         // Log dos dados antes de salvar
         \Log::info('Tentativa de criar nota médica', ['data' => $data]);
+        $data['glosa_valor'] = $request->boolean('glosar') ? $request->input('glosa_valor') : 0;
+        $data['glosa_motivo'] = $request->boolean('glosar') ? $request->input('glosa_motivo') : null;
 
         // Criação do registro
         $nota = Nota::create($data);
@@ -203,6 +242,22 @@ protected function storeMedico(Request $request)
         return view('notas.edit', compact('nota'));
     }
 
+    public function detalhes($id)
+    {
+        $nota = Nota::with(['notaclientes'])->findOrFail($id);
+
+        // Decide qual view parcial retornar com base no tipo
+        if ($nota->tipo_nota === 'clinica') {
+            return view('notas.partials.detalhes-clinica', compact('nota'));
+        }
+
+        if ($nota->tipo_nota === 'medico') {
+            return view('notas.partials.detalhes-medico', compact('nota'));
+        }
+
+        return response()->json(['erro' => 'Tipo de nota inválido.'], 422);
+    }
+
 
     /**
      * Update the specified resource in storage.
@@ -222,12 +277,12 @@ protected function updateClinica(Request $request, Nota $nota)
 {
 
     $data = $request->validate([
-        'tipo_nota' => 'required|in:clinica,medico',
-        'numero_nf' => 'required|string|max:50',
-        'prestador' => 'required|string|max:255',
+        'tipo_nota' => 'in:clinica,medico',
+        'numero_nf' => 'string|max:50',
+        'prestador' => 'string|max:255',
         'cnpj' => 'nullable|string|max:18',
-        'valor_total' => 'required|numeric|min:0',
-        'vencimento_original' => 'required|date',
+        'valor_total' => 'numeric|min:0',
+        'vencimento_original' => 'date',
         'vencimento_prorrogado' => 'nullable|date',
         'data_entregue_financeiro' => 'nullable|date',
         'mes' => 'nullable|string|max:7',
@@ -235,51 +290,77 @@ protected function updateClinica(Request $request, Nota $nota)
         'dados_bancarios' => 'nullable|string',
         'taxa_correio' => 'sometimes|accepted', // Modificado para aceitar checkbox
         'valor_taxa_correio' => 'nullable|numeric|min:0',
-        'arquivo_nf' => 'nullable|file|mimes:pdf|max:5120',
-        'clientes' => 'required|array|min:1',
-        'clientes.*.cliente_atendido' => 'required|string|max:255',
-        'clientes.*.valor' => 'required|numeric|min:0',
+        'arquivo_nf' => 'nullable|file|mimes:pdf|max:10240',
+        'clientes' => 'array|min:1',
+        'clientes.*.cliente_atendido' => 'string|max:255',
+        'clientes.*.valor' => 'numeric|min:0',
         'clientes.*.observacao' => 'nullable|string',
         'observacao' => 'nullable|string',
+        'glosa_motivo' => 'nullable|string',
+        'glosa_valor' => 'nullable|numeric|min:0',
     ]);
 
     // Converter checkbox para boolean
     $data['taxa_correio'] = $request->has('taxa_correio');
 
-    // Processar arquivo
+    // Processar arquivos apenas se novos forem enviados
     if ($request->hasFile('arquivo_nf')) {
-        Storage::disk('public')->delete($nota->arquivo_nf);
-        $data['arquivo_nf'] = $request->file('arquivo_nf')->store('notas', 'public');
+        // Deletar os arquivos antigos, se existirem
+        if ($nota->arquivo_nf) {
+            $arquivosAntigos = json_decode($nota->arquivo_nf, true);
+            foreach ($arquivosAntigos as $arquivo) {
+                if (Storage::exists('public/' . $arquivo)) {
+                    Storage::delete('public/' . $arquivo);
+                }
+            }
+        }
+
+        // Salvar os novos arquivos
+        $novosArquivos = [];
+        foreach ($request->file('arquivo_nf') as $file) {
+            $fileName = 'NF_' . now()->format('Ymd_His') . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('notas/' . now()->format('Y/m'), $fileName, 'public');
+            $novosArquivos[] = $path;
+        }
+
+        $data['arquivo_nf'] = json_encode($novosArquivos);
+    } else {
+        // Manter os arquivos antigos se nenhum novo for enviado
+        $data['arquivo_nf'] = $nota->arquivo_nf;
     }
 
     // Processar clientes
     $nota->notaClientes()->delete();
-    foreach ($request->clientes as $clienteData) {
+    foreach ($data['clientes'] as $clienteData){
         $nota->notaClientes()->create($clienteData);
     }
 
     // Atualizar a nota
     $nota->update($data);
 
+    if ($nota->status === 'rejeitada') {
+        $nota->update(['status' => 'lancada']);
+    }
+
     return redirect()->route('dashboard')->with('success', 'Nota atualizada com sucesso!');
 }
     protected function updateMedico(Request $request, Nota $nota)
     {
         $validated = $request->validate([
-            'tipo_nota' => 'required|in:clinica,medico',
-            'med_nome' => 'required|string|max:255',
+            'tipo_nota' => 'in:clinica,medico',
+            'med_nome' => 'string|max:255',
             'med_telefone' => 'nullable|string|max:20',
             'med_email' => 'nullable|email|max:255',
-            'med_cliente_atendido' => 'required|string|max:255',
+            'med_cliente_atendido' => 'string|max:255',
             'med_local' => 'nullable|string|max:255',
-            'med_horarios' => 'required|array|min:1',
-            'med_horarios.*.data' => 'required|date',
-            'med_horarios.*.entrada' => 'required|date_format:H:i',
-            'med_horarios.*.saida_almoco' => 'required|date_format:H:i',
-            'med_horarios.*.retorno_almoco' => 'required|date_format:H:i',
-            'med_horarios.*.saida' => 'required|date_format:H:i',
-            'med_horarios.*.valor_hora' => 'required|numeric|min:0',
-            'med_horarios.*.total' => 'required|numeric|min:0',
+            'med_horarios' => 'array|min:1',
+            'med_horarios.*.data' => 'date',
+            'med_horarios.*.entrada' => 'date_format:H:i',
+            'med_horarios.*.saida_almoco' => 'date_format:H:i',
+            'med_horarios.*.retorno_almoco' => 'date_format:H:i',
+            'med_horarios.*.saida' => 'date_format:H:i',
+            'med_horarios.*.valor_hora' => 'numeric|min:0',
+            'med_horarios.*.total' => 'numeric|min:0',
             'med_deslocamento' => 'nullable|boolean',
             'med_valor_deslocamento' => 'nullable|numeric|min:0',
             'med_cobrou_almoco' => 'nullable|boolean',
@@ -294,6 +375,8 @@ protected function updateClinica(Request $request, Nota $nota)
             'med_mes' => 'nullable|string|max:50',
             'med_vencimento_prorrogado' => 'nullable|date',
             'med_tipo_pagamento' => 'nullable|string|max:100',
+            'glosa_motivo' => 'nullable|string',
+            'glosa_valor' => 'nullable|numeric|min:0',
         ]);
 
         $validated['med_valor_total_final'] = collect($validated['med_horarios'])->sum('total');
@@ -357,6 +440,8 @@ protected function updateClinica(Request $request, Nota $nota)
                 $data[$campoReal] = $validated[$medCampo];
             }
         }
+        $data['glosa_valor'] = $request->boolean('glosar') ? $request->input('glosa_valor') : 0;
+        $data['glosa_motivo'] = $request->boolean('glosar') ? $request->input('glosa_motivo') : null;
 
         $nota->update($data);
 
@@ -385,7 +470,6 @@ protected function updateClinica(Request $request, Nota $nota)
             abort(403, 'Acesso negado.');
         }
     }
-
     
     public function aprovar(Request $request, Nota $nota)
     {
@@ -396,7 +480,7 @@ protected function updateClinica(Request $request, Nota $nota)
         $nota->update([
             'aprovado_chefia_em' => now(),
             'aprovado_chefia_por' => auth()->id(),
-            'status' => 'confirmada_financeiro',
+            'status' => 'aprovada_chefia',
         ]);
 
         return redirect()->back()->with('success', 'Nota aprovada com sucesso!');
@@ -413,8 +497,6 @@ protected function updateClinica(Request $request, Nota $nota)
         }
 
         $nota->update([
-            'aprovado_chefia_em' => now(),
-            'aprovado_chefia_por' => auth()->id(),
             'status' => 'rejeitada',
             'motivo_rejeicao_chefia' => $request->motivo_rejeicao
         ]);
@@ -453,8 +535,6 @@ protected function updateClinica(Request $request, Nota $nota)
         }
 
         $nota->update([
-            'confirmado_financeiro_em' => now(),
-            'confirmado_financeiro_por' => auth()->id(),
             'status' => 'rejeitada',
         ]);
 

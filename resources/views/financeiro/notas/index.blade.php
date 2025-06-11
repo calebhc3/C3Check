@@ -19,7 +19,7 @@
                                 <th class="px-4 py-3">Valor Líquido</th>
                                 <th class="px-4 py-3">Vencimento</th>
                                 <th class="px-4 py-3">Status</th>
-                                <th class="px-4 py-3">Aprovado Chefia</th>
+                                <th class="px-4 py-3">Data aprovação</th>
                                 <th class="px-4 py-3 text-center">Ações</th>
                             </tr>
                         </thead>

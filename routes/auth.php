@@ -55,10 +55,11 @@ Route::middleware(['auth', 'role:financeiro'])->group(function () {
     // rotas do Rickelme
 });
 
-    Route::post('notas/{nota}/aceitar', [NotaController::class, 'aceitar'])->name('chefia.notas.aceitar');
-    Route::post('notas/{nota}/recusar', [NotaController::class, 'recusar'])->name('chefia.notas.recusar');
+    Route::post('notas/{nota}/aceitar', [NotaController::class, 'aceitar'])->name('financeiro.notas.aceitar');
+    Route::post('notas/{nota}/recusar', [NotaController::class, 'recusar'])->name('financeiro.notas.recusar');
 
     Route::get('/notas/{nota}/comprovante', [NotaController::class, 'showComprovante'])->name('notas.comprovante')->middleware('auth');
+    Route::get('/chefia/notas/{nota}/detalhes', [NotaController::class, 'detalhes'])->name('notas.detalhes');
 
 Route::middleware('auth')->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)

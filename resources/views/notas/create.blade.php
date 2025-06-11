@@ -7,252 +7,336 @@
 
     <div class="py-10">
         <div class="max-w-5xl mx-auto bg-white dark:bg-gray-800 shadow-xl rounded-xl p-8">
-            @if($errors->any())
-    <div class="alert alert-danger">
-        <ul>
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-@endif
-            <form action="{{ route('notas.store') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
-                @csrf
+        @if ($errors->any())
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                <ul class="list-disc list-inside text-red-600">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+<form action="{{ route('notas.store') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
+    @csrf
 
-                {{-- Seção: Tipo de Nota --}}
-                <div class="flex items-center justify-center mb-8">
-                    <div class="inline-flex rounded-md shadow-sm" role="group">
-                        <input type="radio" name="tipo_nota" id="tipo_clinica" value="clinica" class="hidden peer" checked>
-                        <label for="tipo_clinica" id="label_clinica" class="px-6 py-3 text-sm font-medium rounded-l-lg border
-                            bg-indigo-600 text-white border-indigo-600
-                            hover:bg-indigo-700
-                            cursor-pointer transition-all duration-200 ease-in-out">
-                            Clínica
-                        </label>
-                        
-                        <input type="radio" name="tipo_nota" id="tipo_medico" value="medico" class="hidden peer">
-                        <label for="tipo_medico" id="label_medico" class="px-6 py-3 text-sm font-medium rounded-r-lg border border-gray-200
-                            bg-white text-gray-900 border-gray-200
-                            hover:bg-gray-50
-                            cursor-pointer transition-all duration-200 ease-in-out">
-                            Médico
-                        </label>
+    {{-- Seção: Tipo de Nota --}}
+    <div class="flex items-center justify-center mb-8">
+        <div class="inline-flex rounded-md shadow-sm" role="group">
+            <input type="radio" name="tipo_nota" id="tipo_clinica" value="clinica" class="hidden peer" checked>
+            <label for="tipo_clinica" id="label_clinica" class="px-6 py-3 text-sm font-medium rounded-l-lg border
+                bg-indigo-600 text-white border-indigo-600
+                hover:bg-indigo-700
+                cursor-pointer transition-all duration-200 ease-in-out">
+                Clínica
+            </label>
+            
+            <input type="radio" name="tipo_nota" id="tipo_medico" value="medico" class="hidden peer">
+            <label for="tipo_medico" id="label_medico" class="px-6 py-3 text-sm font-medium rounded-r-lg border border-gray-200
+                bg-white text-gray-900 border-gray-200
+                hover:bg-gray-50
+                cursor-pointer transition-all duration-200 ease-in-out">
+                Médico
+            </label>
+        </div>
+    </div>
+
+    {{-- Formulário para Clínica --}}
+    <div id="clinica-form">
+        {{-- Seção: Informações da Nota --}}
+        <div class="border-b border-gray-300 pb-6">
+            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">Informações da Nota</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <x-input-label for="numero_nf" value="Número da NF" />
+                <x-text-input name="numero_nf" id="numero_nf" class="w-full" />
+
+                <x-input-label for="prestador" value="Prestador" />
+                <x-text-input name="prestador" id="prestador" class="w-full" />
+
+                <x-input-label for="cnpj" value="CNPJ" />
+                <x-text-input name="cnpj" id="cnpj" class="w-full" />
+
+                <x-input-label for="vencimento_original" value="Vencimento Original" />
+                <x-text-input name="vencimento_original" id="vencimento_original" type="date" class="w-full" />
+
+                <x-input-label for="vencimento_prorrogado" value="Prorrogação (se houver)" />
+                <x-text-input name="vencimento_prorrogado" id="vencimento_prorrogado" type="date" class="w-full" />
+
+                <x-input-label for="mes" value="Mês de Referência (MM/AAAA)" />
+                <x-text-input name="mes" id="mes" placeholder="MM/AAAA" class="w-full" />
+
+                <div class="md:col-span-2">
+                    <x-input-label for="taxa_correio" value="Taxa de Correio?" />
+                    <div class="flex items-center mt-2">
+                        <input type="checkbox" name="taxa_correio" id="taxa_correio" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <x-input-label for="valor_taxa_correio" value="Valor da Taxa (R$)" class="ml-4 mr-2" />
+                        <x-text-input name="valor_taxa_correio" id="valor_taxa_correio" type="number" step="0.01" class="w-32" disabled />
                     </div>
                 </div>
 
-                {{-- Formulário para Clínica --}}
-                <div id="clinica-form">
-                    {{-- Seção: Informações da Nota --}}
-                    <div class="border-b border-gray-300 pb-6">
-                        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">Informações da Nota</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <x-input-label for="numero_nf" value="Número da NF" />
-                            <x-text-input name="numero_nf" id="numero_nf" class="w-full"  />
+            <x-input-label for="arquivo_nf" value="Arquivos da NF (PDFs)" />
+            <input 
+                type="file" 
+                name="arquivo_nf[]" 
+                id="arquivo_nf" 
+                multiple 
+                accept="application/pdf" 
+                class="w-full dark:bg-gray-700 dark:text-white border-gray-300 rounded-md"
+            />
+            </div>
+        </div>
 
-                            <x-input-label for="prestador" value="Prestador" />
-                            <x-text-input name="prestador" id="prestador" class="w-full"  />
-
-                            <x-input-label for="cnpj" value="CNPJ" />
-                            <x-text-input name="cnpj" id="cnpj" class="w-full" />
-
-                            <x-input-label for="vencimento_original" value="Vencimento Original" />
-                            <x-text-input name="vencimento_original" id="vencimento_original" type="date" class="w-full" />
-
-                            <x-input-label for="data_entregue_financeiro" value="Data Entregue ao Financeiro" />
-                            <x-text-input name="data_entregue_financeiro" id="data_entregue_financeiro" type="date" class="w-full" />
-
-                            <x-input-label for="mes" value="Mês de Referência (MM/AAAA)" />
-                            <x-text-input name="mes" id="mes" placeholder="MM/AAAA" class="w-full" />
-
-                            <x-input-label for="vencimento_prorrogado" value="Prorrogação (se houver)" />
-                            <x-text-input name="vencimento_prorrogado" id="vencimento_prorrogado" type="date" class="w-full" />
-
-                            <div class="md:col-span-2">
-                                <x-input-label for="taxa_correio" value="Taxa de Correio?" />
-                                <div class="flex items-center mt-2">
-                                    <input type="checkbox" name="taxa_correio" id="taxa_correio" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                    <x-input-label for="valor_taxa_correio" value="Valor da Taxa (R$)" class="ml-4 mr-2" />
-                                    <x-text-input name="valor_taxa_correio" id="valor_taxa_correio" type="number" step="0.01" class="w-32" disabled />
-                                </div>
-                            </div>
-
-                            <x-input-label for="arquivo_nf" value="Arquivo da NF (PDF)" />
-                            <input type="file" name="arquivo_nf" id="arquivo_nf" accept="application/pdf" class="w-full dark:bg-gray-700 dark:text-white border-gray-300 rounded-md" />
-                        </div>
-
-                    {{-- Seção: Clientes Atendidos --}}
-                    <div class="border-b border-gray-300 pb-6">
-                        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">Clientes Atendidos</h3>
-                        <div id="clientes-wrapper" class="space-y-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 cliente-item bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner">
-                                <div>
-                                    <x-input-label value="Cliente Atendido" />
-                                    <x-text-input name="clientes[0][cliente_atendido]" class="w-full" />
-                                </div>
-                                <div>
-                                    <x-input-label value="Valor (R$)" />
-                                    <x-text-input name="clientes[0][valor]" type="number" step="0.01" class="w-full" />
-                                </div>
-                                <div class="md:col-span-2">
-                                    <x-input-label value="Observação" />
-                                    <textarea name="clientes[0][observacao]" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-600 dark:text-white"></textarea>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-4">
-                            <button type="button" id="add-cliente" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-md">
-                                + Adicionar Cliente
-                            </button>
-                        </div>
+        {{-- Seção: Clientes Atendidos --}}
+        <div class="border-b border-gray-300 pb-6">
+            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">Clientes Atendidos</h3>
+            <div id="clientes-wrapper" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 cliente-item bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner">
+                    <div>
+                        <x-input-label value="Cliente Atendido" />
+                        <x-text-input name="clientes[0][cliente_atendido]" class="w-full" />
                     </div>
-                                                <x-input-label for="valor_total" class='mt-5' value="Valor Total (R$)" />
-                            <x-text-input name="valor_total" id="valor_total" class="w-full mt-1"  type="number" step="0.01" />
-
-                            <x-input-label for="tipo_pagamento" class='mt-5' value="Tipo de Pagamento" />
-                            <select name="tipo_pagamento" id="tipo_pagamento" class="w-full mt-1 mb-5 border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
-                                <option value="">Selecione</option>
-                                <option value="boleto">Boleto</option>
-                                <option value="deposito">Depósito</option>
-                                <option value="pix">Pix</option>
-                            </select>
-
-                            <x-input-label for="dados_bancarios" value="Dados Bancários (se aplicável)" />
-                            <textarea name="dados_bancarios" id="dados_bancarios" rows="3" class="w-full mt-1 border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white"></textarea>
-                            
-                            <x-input-label for="observacao" value="Observação" />
-                            <textarea name="observacao" id="observacao" rows="3" class="w-full mt-1 border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white"></textarea>
-
-                </div>
-    </div>
-                {{-- Formulário para Médico --}}
-                <div id="medico-form" class="hidden">
-                    <div class="border-b border-gray-300 pb-6">
-                        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">Informações do Médico</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <x-input-label for="med_nome" value="Nome do Médico" />
-                            <x-text-input name="med_nome" id="med_nome" class="w-full" />
-
-                            <x-input-label for="med_numero_nf" value="Número da NF" />
-                            <x-text-input name="med_numero_nf" id="med_numero_nf" class="w-full"  />
-
-                            <x-input-label for="med_vencimento_original" value="Vencimento Original" />
-                            <x-text-input name="med_vencimento_original" id="med_vencimento_original" type="date" class="w-full" />
-
-                            <x-input-label for="med_mes" value="Mês de Referência (MM/AAAA)" />
-                            <x-text-input name="med_mes" id="med_mes" placeholder="MM/AAAA" class="w-full" />
-
-                            <x-input-label for="med_vencimento_prorrogado" value="Prorrogação (se houver)" />
-                            <x-text-input name="med_vencimento_prorrogado" id="med_vencimento_prorrogado" type="date" class="w-full" />
-
-                            <x-input-label for="med_telefone" value="Telefone Financeiro" />
-                            <x-text-input name="med_telefone" id="med_telefone" class="w-full" />
-
-                            <x-input-label for="med_email" value="Email Financeiro  " />
-                            <x-text-input name="med_email" id="med_email" type="email" class="w-full" />
-
-                            <x-input-label for="med_cliente_atendido" value="Cliente Atendido" />
-                            <x-text-input name="med_cliente_atendido" id="med_cliente_atendido" class="w-full" />
-
-                            <x-input-label for="med_local" value="Local de Atendimento" />
-                            <x-text-input name="med_local" id="med_local" class="w-full" />
-
-                        <div class="md:col-span-2">
-                            <x-input-label value="Horários e Valores" />
-                            <div id="med-horarios-wrapper" class="space-y-4">
-                                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 horario-item bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner">
-                                    <div>
-                                        <x-input-label value="Data" />
-                                        <x-text-input name="med_horarios[0][data]" type="date" class="w-full"  />
-                                    </div>
-                                    <div>
-                                        <x-input-label value="Entrada" />
-                                        <x-text-input name="med_horarios[0][entrada]" type="time" class="w-full entrada"  />
-                                    </div>
-                                    <div>
-                                        <x-input-label value="Saída Almoço" />
-                                        <x-text-input name="med_horarios[0][saida_almoco]" type="time" class="w-full saida-almoco"  />
-                                    </div>
-                                    <div>
-                                        <x-input-label value="Retorno Almoço" />
-                                        <x-text-input name="med_horarios[0][retorno_almoco]" type="time" class="w-full retorno-almoco"  />
-                                    </div>
-                                    <div>
-                                        <x-input-label value="Saída" />
-                                        <x-text-input name="med_horarios[0][saida]" type="time" class="w-full saida"  />
-                                    </div>
-                                    <div class="md:col-span-2">
-                                        <x-input-label value="Valor por Hora (R$)" />
-                                        <x-text-input name="med_horarios[0][valor_hora]" type="number" step="0.01" class="w-full valor-hora"  />
-                                    </div>
-                                    <div class="md:col-span-3">
-                                        <x-input-label value="Total (R$)" />
-                                        <x-text-input name="med_horarios[0][total]" type="number" step="0.01" class="w-full total" readonly />
-                                    </div>
-                                </div>
-                            </div>
-                            <button type="button" id="add-horario" class="mt-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-md">
-                                + Adicionar Dia de Trabalho
-                            </button>
-                        </div>
-
-                                    <div class="md:col-span-2">
-                                        <x-input-label for="med_deslocamento" value="Deslocamento?" />
-                                        <div class="flex items-center mt-2">
-                                            <input type="checkbox" name="med_deslocamento" id="med_deslocamento" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                            <x-input-label for="med_valor_deslocamento" value="Valor do Deslocamento (R$)" class="ml-4 mr-2" />
-                                            <x-text-input name="med_valor_deslocamento" id="med_valor_deslocamento" type="number" step="0.01" class="w-32" disabled />
-                                        </div>
-                                    </div>
-
-                                    <div class="md:col-span-2">
-                                        <x-input-label for="med_cobrou_almoco" value="Cobrou Almoço?" />
-                                        <div class="flex items-center mt-2">
-                                            <input type="checkbox" name="med_cobrou_almoco" id="med_cobrou_almoco" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                            <x-input-label for="med_valor_almoco" value="Valor do Almoço (R$)" class="ml-4 mr-2" />
-                                            <x-text-input name="med_valor_almoco" id="med_valor_almoco" type="number" step="0.01" class="w-32" disabled />
-                                        </div>
-                                    </div>
-
-                                    <div class="md:col-span-2">
-                                        <x-input-label for="med_reembolso_correios" value="Reembolso de Correios?" />
-                                        <div class="flex items-center mt-2">
-                                            <input type="checkbox" name="med_reembolso_correios" id="med_reembolso_correios" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                            <x-input-label for="med_valor_correios" value="Valor dos Correios (R$)" class="ml-4 mr-2" />
-                                            <x-text-input name="med_valor_correios" id="med_valor_correios" type="number" step="0.01" class="w-32" disabled />
-                                        </div>
-                                    </div>
-
-                                    <x-input-label for="med_valor_total_final" value="Valor Total Final (R$)" />
-                                    <x-text-input name="med_valor_total_final" id="med_valor_total_final" type="number" step="0.01" class="w-full" />
-
-
-                                    <x-input-label for="med_tipo_pagamento" value="Tipo de Pagamento" />
-                                    <select name="med_tipo_pagamento" id="med_tipo_pagamento" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
-                                        <option value="">Selecione</option>
-                                        <option value="boleto">Boleto</option>
-                                        <option value="deposito">Depósito</option>
-                                        <option value="pix">Pix</option>
-                                    </select>
-
-                                    <x-input-label for="med_dados_bancarios" value="Dados Bancários (se aplicável)" />
-                                    <textarea name="med_dados_bancarios" id="med_dados_bancarios" rows="3" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white"></textarea>
-                                    
-                                    <x-input-label for="med_observacao" value="Observação" />
-                                    <textarea name="med_observacao" id="med_observacao" rows="3" class="w-full mt-1 border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white"></textarea>
-
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="text-right pt-4">
-                            <x-primary-button>Salvar Nota</x-primary-button>
-                        </div>
-                    </form>
+                    <div>
+                        <x-input-label value="Valor (R$)" />
+                        <x-text-input name="clientes[0][valor]" type="number" step="0.01" class="w-full" />
+                    </div>
+                    <div class="md:col-span-2">
+                        <x-input-label value="Observação" />
+                        <textarea name="clientes[0][observacao]" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-600 dark:text-white"></textarea>
+                    </div>
                 </div>
             </div>
 
+            <div class="mt-4">
+                <button type="button" id="add-cliente" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-md">
+                    + Adicionar Cliente
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <x-input-label for="valor_total" value="Valor Total (R$)" />
+            <x-text-input name="valor_total" id="valor_total" class="w-full" type="number" step="0.01" />
+
+            <x-input-label for="tipo_pagamento" value="Tipo de Pagamento" />
+            <select name="tipo_pagamento" id="tipo_pagamento" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                <option value="">Selecione</option>
+                <option value="boleto">Boleto</option>
+                <option value="deposito">Depósito</option>
+                <option value="pix">Pix</option>
+            </select>
+
+            <x-input-label for="dados_bancarios" value="Dados Bancários (se aplicável)" />
+            <textarea name="dados_bancarios" id="dados_bancarios" rows="3" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white"></textarea>
+            
+            <x-input-label for="observacao" value="Observação" />
+            <textarea name="observacao" id="observacao" rows="3" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white"></textarea>
+
+            <div class="md:col-span-2">
+                <x-input-label value="Glosar nota?" />
+                <div class="flex items-center mt-2">
+                    <div class="flex items-center mr-4">
+                        <input type="radio" name="glosar" id="glosar_clinica_sim" value="1" onchange="toggleGlosa('clinica', true)" 
+                            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <x-input-label for="glosar_clinica_sim" value="Sim" class="ml-2" />
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" name="glosar" id="glosar_clinica_nao" value="0" onchange="toggleGlosa('clinica', false)" checked 
+                            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <x-input-label for="glosar_clinica_nao" value="Não" class="ml-2" />
+                    </div>
+                </div>
+            </div>
+
+            <div id="glosaClinicaCampos" class="md:col-span-2" style="display: none;">
+                <div class="mt-4">
+                    <x-input-label for="glosa_motivo" value="Motivo da Glosa" />
+                    <textarea name="glosa_motivo" id="glosa_motivo" rows="3" 
+                            class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                        {{ old('glosa_motivo', $nota->glosa_motivo ?? '') }}
+                    </textarea>
+                </div>
+
+                <div class="mt-4">
+                    <x-input-label for="glosa_valor" value="Valor da Glosa (R$)" />
+                    <x-text-input type="number" step="0.01" name="glosa_valor" id="glosa_valor" 
+                                class="w-full" 
+                                value="{{ old('glosa_valor', $nota->glosa_valor ?? '') }}" />
+                </div>
+            </div>
+        </div>
+
+        {{-- Botão de envio para formulário Clínica --}}
+        <div class="text-right pt-4">
+            <x-primary-button>Salvar Nota</x-primary-button>
+        </div>
+    </div>
+
+    {{-- Formulário para Médico --}}
+    <div id="medico-form" class="hidden">
+        <div class="border-b border-gray-300 pb-6">
+            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">Informações do Médico</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <x-input-label for="med_nome" value="Nome do Médico" />
+                <x-text-input name="med_nome" id="med_nome" class="w-full" />
+
+                <x-input-label for="med_numero_nf" value="Número da NF" />
+                <x-text-input name="med_numero_nf" id="med_numero_nf" class="w-full" />
+
+                <x-input-label for="med_vencimento_original" value="Vencimento Original" />
+                <x-text-input name="med_vencimento_original" id="med_vencimento_original" type="date" class="w-full" />
+
+                <x-input-label for="med_mes" value="Mês de Referência (MM/AAAA)" />
+                <x-text-input name="med_mes" id="med_mes" placeholder="MM/AAAA" class="w-full" />
+
+                <x-input-label for="med_vencimento_prorrogado" value="Prorrogação (se houver)" />
+                <x-text-input name="med_vencimento_prorrogado" id="med_vencimento_prorrogado" type="date" class="w-full" />
+
+                <x-input-label for="med_telefone" value="Telefone Financeiro" />
+                <x-text-input name="med_telefone" id="med_telefone" class="w-full" />
+
+                <x-input-label for="med_email" value="Email Financeiro" />
+                <x-text-input name="med_email" id="med_email" type="email" class="w-full" />
+
+                <x-input-label for="med_cliente_atendido" value="Cliente Atendido" />
+                <x-text-input name="med_cliente_atendido" id="med_cliente_atendido" class="w-full" />
+
+                <x-input-label for="med_local" value="Local de Atendimento" />
+                <x-text-input name="med_local" id="med_local" class="w-full" />
+
+                <div class="md:col-span-2">
+                    <x-input-label value="Horários e Valores" />
+                    <div id="med-horarios-wrapper" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 horario-item bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner">
+                            <div>
+                                <x-input-label value="Data" />
+                                <x-text-input name="med_horarios[0][data]" type="date" class="w-full" />
+                            </div>
+                            <div>
+                                <x-input-label value="Entrada" />
+                                <x-text-input name="med_horarios[0][entrada]" type="time" class="w-full entrada" />
+                            </div>
+                            <div>
+                                <x-input-label value="Saída Almoço" />
+                                <x-text-input name="med_horarios[0][saida_almoco]" type="time" class="w-full saida-almoco" />
+                            </div>
+                            <div>
+                                <x-input-label value="Retorno Almoço" />
+                                <x-text-input name="med_horarios[0][retorno_almoco]" type="time" class="w-full retorno-almoco" />
+                            </div>
+                            <div>
+                                <x-input-label value="Saída" />
+                                <x-text-input name="med_horarios[0][saida]" type="time" class="w-full saida" />
+                            </div>
+                            <div class="md:col-span-2">
+                                <x-input-label value="Valor por Hora (R$)" />
+                                <x-text-input name="med_horarios[0][valor_hora]" type="number" step="0.01" class="w-full valor-hora" />
+                            </div>
+                            <div class="md:col-span-3">
+                                <x-input-label value="Total (R$)" />
+                                <x-text-input name="med_horarios[0][total]" type="number" step="0.01" class="w-full total" readonly />
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" id="add-horario" class="mt-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-md">
+                        + Adicionar Dia de Trabalho
+                    </button>
+                </div>
+
+                <div class="md:col-span-2">
+                    <x-input-label for="med_deslocamento" value="Deslocamento?" />
+                    <div class="flex items-center mt-2">
+                        <input type="checkbox" name="med_deslocamento" id="med_deslocamento" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <x-input-label for="med_valor_deslocamento" value="Valor do Deslocamento (R$)" class="ml-4 mr-2" />
+                        <x-text-input name="med_valor_deslocamento" id="med_valor_deslocamento" type="number" step="0.01" class="w-32" disabled />
+                    </div>
+                </div>
+
+                <div class="md:col-span-2">
+                    <x-input-label for="med_cobrou_almoco" value="Cobrou Almoço?" />
+                    <div class="flex items-center mt-2">
+                        <input type="checkbox" name="med_cobrou_almoco" id="med_cobrou_almoco" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <x-input-label for="med_valor_almoco" value="Valor do Almoço (R$)" class="ml-4 mr-2" />
+                        <x-text-input name="med_valor_almoco" id="med_valor_almoco" type="number" step="0.01" class="w-32" disabled />
+                    </div>
+                </div>
+
+                <div class="md:col-span-2">
+                    <x-input-label for="med_reembolso_correios" value="Reembolso de Correios?" />
+                    <div class="flex items-center mt-2">
+                        <input type="checkbox" name="med_reembolso_correios" id="med_reembolso_correios" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <x-input-label for="med_valor_correios" value="Valor dos Correios (R$)" class="ml-4 mr-2" />
+                        <x-text-input name="med_valor_correios" id="med_valor_correios" type="number" step="0.01" class="w-32" disabled />
+                    </div>
+                </div>
+
+                <x-input-label for="med_tipo_pagamento" value="Tipo de Pagamento" />
+                <select name="med_tipo_pagamento" id="med_tipo_pagamento" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                    <option value="">Selecione</option>
+                    <option value="boleto">Boleto</option>
+                    <option value="deposito">Depósito</option>
+                    <option value="pix">Pix</option>
+                </select>
+
+                <x-input-label for="med_dados_bancarios" value="Dados Bancários (se aplicável)" />
+                <textarea name="med_dados_bancarios" id="med_dados_bancarios" rows="3" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white"></textarea>
+                
+                <x-input-label for="med_observacao" value="Observação" />
+                <textarea name="med_observacao" id="med_observacao" rows="3" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white"></textarea>
+
+            </div>
+        </div>
+
+        {{-- Botão de envio para formulário Médico --}}
+        <div class="text-right pt-4">
+            <x-primary-button>Salvar Nota</x-primary-button>
+        </div>
+    </div>
+</form>
 <script>
+function toggleGlosa(formType, show) {
+    const glosaCampos = document.getElementById(`glosa${formType.charAt(0).toUpperCase() + formType.slice(1)}Campos`);
+    if (glosaCampos) {
+        glosaCampos.style.display = show ? 'block' : 'none';
+    }
+}
+
+function checkTipoNota() {
+    const tipoNota = document.querySelector('input[name="tipo_nota"]:checked')?.value;
+    
+    // Mostra/oculta os formulários principais
+    document.getElementById('clinica-form').style.display = tipoNota === 'clinica' ? 'block' : 'none';
+    document.getElementById('medico-form').style.display = tipoNota === 'medico' ? 'block' : 'none';
+    
+    // Reseta os campos de glosa quando muda o tipo
+    if (tipoNota === 'clinica') {
+        document.querySelector('input[name="glosar"][value="0"]').checked = true;
+        toggleGlosa('clinica', false);
+    } else if (tipoNota === 'medico') {
+        document.querySelector('input[name="med_glosar"][value="0"]').checked = true;
+        toggleGlosa('medico', false);
+    }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    checkTipoNota();
+
+    // Configura listeners para os radio buttons de tipo de nota
+    document.querySelectorAll('input[name="tipo_nota"]').forEach(radio => {
+        radio.addEventListener('change', checkTipoNota);
+    });
+
+    // Auto mostrar glosa se já vier com valor preenchido (edição)
+    const glosaValor = parseFloat(document.getElementById('glosa_valor')?.value || 0);
+    if (glosaValor > 0) {
+        document.querySelector('input[name="glosar"][value="1"]').checked = true;
+        toggleGlosa('clinica', true);
+    }
+
+    const medGlosaValor = parseFloat(document.getElementById('med_glosa_valor')?.value || 0);
+    if (medGlosaValor > 0) {
+        document.querySelector('input[name="med_glosar"][value="1"]').checked = true;
+        toggleGlosa('medico', true);
+    }
+});
 /**
  * FormManager - Singleton para gerenciamento de formulários
  */

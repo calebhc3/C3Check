@@ -46,7 +46,7 @@ public function index(Request $request)
     }
 
     if ($user->hasRole('financeiro')) {
-        $notasPendentes = Nota::whereNotNull('aprovado_chefia_em')
+        $notasPendentes = Nota::where('status', 'aprovada_chefia')
             ->whereNull('confirmado_financeiro_em')
             ->orderBy('created_at', 'desc')
             ->paginate(10, ['*'], 'pendentes');
@@ -59,7 +59,7 @@ public function index(Request $request)
     }
 
     if ($user->hasRole('chefia')) {
-        $notasPendentes = Nota::whereNull('aprovado_chefia_em')
+        $notasPendentes = Nota::where('status', 'lancada')
             ->orderBy('created_at', 'desc')
             ->paginate(10, ['*'], 'pendentes');
 
