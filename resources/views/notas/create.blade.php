@@ -234,6 +234,10 @@
                                 <x-input-label value="Total (R$)" />
                                 <x-text-input name="med_horarios[0][total]" type="number" step="0.01" class="w-full total" readonly />
                             </div>
+                            <div class="md:col-span-2">
+                                <x-input-label value="Horas Trabalhadas" />
+                                <x-text-input name="med_horarios[0][horas_trabalhadas]" type="text" class="w-full horas-trabalhadas" readonly />
+                            </div>
                         </div>
                     </div>
                     <button type="button" id="add-horario" class="mt-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-md">
@@ -479,25 +483,39 @@ const FormManager = (function() {
             },
             
             calculateDayTotal(entrada, saidaAlmoco, retornoAlmoco, saida, valorHora) {
-                const entradaMin = privateMethods.timeToMinutes(entrada);
-                const saidaAlmocoMin = privateMethods.timeToMinutes(saidaAlmoco);
-                const retornoAlmocoMin = privateMethods.timeToMinutes(retornoAlmoco);
-                const saidaMin = privateMethods.timeToMinutes(saida);
+            const entradaMin = privateMethods.timeToMinutes(entrada);
+            const saidaAlmocoMin = privateMethods.timeToMinutes(saidaAlmoco);
+            const retornoAlmocoMin = privateMethods.timeToMinutes(retornoAlmoco);
+            const saidaMin = privateMethods.timeToMinutes(saida);
 
-                let totalMinutes = 0;
+            let totalMinutes = 0;
 
-                if (entrada && saida) {
-                    if (saidaAlmoco && retornoAlmoco) {
-                        const manha = saidaAlmocoMin - entradaMin;
-                        const tarde = saidaMin - retornoAlmocoMin;
-                        totalMinutes = manha + tarde;
-                    } else {
-                        totalMinutes = saidaMin - entradaMin;
-                    }
+
+            
+            if (entrada && saida) {
+                if (saidaAlmoco && retornoAlmoco) {
+                    const manha = saidaAlmocoMin - entradaMin;
+                    const tarde = saidaMin - retornoAlmocoMin;
+                    totalMinutes = manha + tarde;
+                } else {
+                    totalMinutes = saidaMin - entradaMin;
                 }
+            }
 
-                const horasTrabalhadas = totalMinutes / 60;
-                return parseFloat((horasTrabalhadas * valorHora).toFixed(2));
+            const horasTrabalhadas = totalMinutes / 60;
+            const horas = Math.floor(totalMinutes / 60);
+            const minutos = totalMinutes % 60;
+            
+            return {
+                valor: parseFloat((horasTrabalhadas * valorHora).toFixed(2)),
+                horas: `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`
+            };
+        },
+
+            formatHours(totalMinutes) {
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = Math.round(totalMinutes % 60);
+                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
             },
             
             setupDayListeners(item) {
@@ -507,10 +525,11 @@ const FormManager = (function() {
                 const saida = item.querySelector('.saida');
                 const valorHora = item.querySelector('.valor-hora');
                 const total = item.querySelector('.total');
+                const horasTrabalhadas = item.querySelector('.horas-trabalhadas');
                 
                 const calculateDay = () => {
                     if (entrada.value && saida.value && valorHora.value) {
-                        const dayTotal = privateMethods.calculateDayTotal(
+                        const result = privateMethods.calculateDayTotal(
                             entrada.value,
                             saidaAlmoco.value,
                             retornoAlmoco.value,
@@ -518,7 +537,8 @@ const FormManager = (function() {
                             parseFloat(valorHora.value)
                         );
                         
-                        total.value = dayTotal;
+                        total.value = result.valor;
+                        horasTrabalhadas.value = result.horas;
                         privateMethods.calculateMedicoTotal();
                     }
                 };
@@ -550,34 +570,54 @@ const FormManager = (function() {
             },
             
             calculateMedicoTotal() {
-                let total = 0;
+            let totalValor = 0;
+            let totalHoras = 0;
+            let totalMinutos = 0;
+            
+            // Soma todos os dias de trabalho
+            elements.wrappers.horarios.querySelectorAll('.horario-item').forEach(item => {
+                const totalField = item.querySelector('.total');
+                const horasField = item.querySelector('.horas-trabalhadas');
                 
-                // Soma todos os dias de trabalho
-                elements.wrappers.horarios.querySelectorAll('.horario-item').forEach(item => {
-                    const totalField = item.querySelector('.total');
-                    if (totalField && totalField.value) {
-                        total += parseFloat(totalField.value);
-                    }
-                });
-                
-                // Adiciona deslocamento se marcado
-                if (elements.calculos.medico.deslocamento.checkbox.checked) {
-                    total += parseFloat(elements.calculos.medico.deslocamento.valor.value) || 0;
+                if (totalField && totalField.value) {
+                    totalValor += parseFloat(totalField.value);
                 }
                 
-                // Adiciona almoço se marcado
-                if (elements.calculos.medico.almoco.checkbox.checked) {
-                    total += parseFloat(elements.calculos.medico.almoco.valor.value) || 0;
+                if (horasField && horasField.value) {
+                    const [horas, minutos] = horasField.value.split(':').map(Number);
+                    totalHoras += horas;
+                    totalMinutos += minutos;
                 }
-                
-                // Adiciona correios se marcado
-                if (elements.calculos.medico.correios.checkbox.checked) {
-                    total += parseFloat(elements.calculos.medico.correios.valor.value) || 0;
-                }
-                
-                // Atualiza o campo total final
-                elements.calculos.medico.totalFinal.value = total.toFixed(2);
-            },
+            });
+            
+            // Converter minutos excedentes em horas
+            totalHoras += Math.floor(totalMinutos / 60);
+            totalMinutos = totalMinutos % 60;
+            
+            // Adiciona deslocamento se marcado
+            if (elements.calculos.medico.deslocamento.checkbox.checked) {
+                totalValor += parseFloat(elements.calculos.medico.deslocamento.valor.value) || 0;
+            }
+            
+            // Adiciona almoço se marcado
+            if (elements.calculos.medico.almoco.checkbox.checked) {
+                totalValor += parseFloat(elements.calculos.medico.almoco.valor.value) || 0;
+            }
+            
+            // Adiciona correios se marcado
+            if (elements.calculos.medico.correios.checkbox.checked) {
+                totalValor += parseFloat(elements.calculos.medico.correios.valor.value) || 0;
+            }
+            
+            // Atualiza o campo total final
+            elements.calculos.medico.totalFinal.value = totalValor.toFixed(2);
+            
+            // Atualiza o total de horas (adicionar este campo no seu HTML se ainda não existir)
+            const totalHorasElement = document.getElementById('med_total_horas');
+            if (totalHorasElement) {
+                totalHorasElement.value = `${totalHoras.toString().padStart(2, '0')}:${totalMinutos.toString().padStart(2, '0')}`;
+            }
+        },
             
             setupClinicaListeners() {
                 // Listener para adicionar cliente
@@ -621,62 +661,66 @@ const FormManager = (function() {
             },
             
             setupMedicoListeners() {
-                // Listener para adicionar horário
-                elements.buttons.addHorario.addEventListener('click', () => {
-                    const html = `
-                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 horario-item bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner mt-4">
-                            <div>
-                                <x-input-label value="Data" />
-                                <x-text-input name="med_horarios[${state.horarioCount}][data]" type="date" class="w-full" />
-                            </div>
-                            <div>
-                                <x-input-label value="Entrada" />
-                                <x-text-input name="med_horarios[${state.horarioCount}][entrada]" type="time" class="w-full entrada" />
-                            </div>
-                            <div>
-                                <x-input-label value="Saída Almoço" />
-                                <x-text-input name="med_horarios[${state.horarioCount}][saida_almoco]" type="time" class="w-full saida-almoco" />
-                            </div>
-                            <div>
-                                <x-input-label value="Retorno Almoço" />
-                                <x-text-input name="med_horarios[${state.horarioCount}][retorno_almoco]" type="time" class="w-full retorno-almoco" />
-                            </div>
-                            <div>
-                                <x-input-label value="Saída" />
-                                <x-text-input name="med_horarios[${state.horarioCount}][saida]" type="time" class="w-full saida" />
-                            </div>
-                            <div class="md:col-span-2">
-                                <x-input-label value="Valor por Hora (R$)" />
-                                <x-text-input name="med_horarios[${state.horarioCount}][valor_hora]" type="number" step="0.01" class="w-full valor-hora" />
-                            </div>
-                            <div class="md:col-span-3">
-                                <x-input-label value="Total (R$)" />
-                                <x-text-input name="med_horarios[${state.horarioCount}][total]" type="number" step="0.01" class="w-full total" readonly />
-                            </div>
+            // Listener para adicionar horário
+            elements.buttons.addHorario.addEventListener('click', () => {
+                const html = `
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 horario-item bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner mt-4">
+                        <div>
+                            <x-input-label value="Data" />
+                            <x-text-input name="med_horarios[${state.horarioCount}][data]" type="date" class="w-full" />
                         </div>
-                    `;
-                    elements.wrappers.horarios.insertAdjacentHTML('beforeend', html);
-                    
-                    // Configura os listeners para o novo item
-                    const newItem = elements.wrappers.horarios.lastElementChild;
-                    privateMethods.setupDayListeners(newItem);
-                    
-                    state.horarioCount++;
-                });
+                        <div>
+                            <x-input-label value="Entrada" />
+                            <x-text-input name="med_horarios[${state.horarioCount}][entrada]" type="time" class="w-full entrada" />
+                        </div>
+                        <div>
+                            <x-input-label value="Saída Almoço" />
+                            <x-text-input name="med_horarios[${state.horarioCount}][saida_almoco]" type="time" class="w-full saida-almoco" />
+                        </div>
+                        <div>
+                            <x-input-label value="Retorno Almoço" />
+                            <x-text-input name="med_horarios[${state.horarioCount}][retorno_almoco]" type="time" class="w-full retorno-almoco" />
+                        </div>
+                        <div>
+                            <x-input-label value="Saída" />
+                            <x-text-input name="med_horarios[${state.horarioCount}][saida]" type="time" class="w-full saida" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <x-input-label value="Valor por Hora (R$)" />
+                            <x-text-input name="med_horarios[${state.horarioCount}][valor_hora]" type="number" step="0.01" class="w-full valor-hora" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <x-input-label value="Total (R$)" />
+                            <x-text-input name="med_horarios[${state.horarioCount}][total]" type="number" step="0.01" class="w-full total" readonly />
+                        </div>
+                        <div class="md:col-span-1">
+                            <x-input-label value="Horas" />
+                            <x-text-input name="med_horarios[${state.horarioCount}][horas_trabalhadas]" type="text" class="w-full horas-trabalhadas" readonly />
+                        </div>
+                    </div>
+                `;
+                elements.wrappers.horarios.insertAdjacentHTML('beforeend', html);
                 
-                // Listeners para campos condicionais
-                elements.calculos.medico.deslocamento.valor.addEventListener('input', () => {
-                    privateMethods.calculateMedicoTotal();
-                });
+                // Configura os listeners para o novo item
+                const newItem = elements.wrappers.horarios.lastElementChild;
+                privateMethods.setupDayListeners(newItem);
                 
-                elements.calculos.medico.almoco.valor.addEventListener('input', () => {
-                    privateMethods.calculateMedicoTotal();
-                });
-                
-                elements.calculos.medico.correios.valor.addEventListener('input', () => {
-                    privateMethods.calculateMedicoTotal();
-                });
-            }
+                state.horarioCount++;
+            });
+
+            // Listeners para campos condicionais
+            elements.calculos.medico.deslocamento.valor.addEventListener('input', () => {
+                privateMethods.calculateMedicoTotal();
+            });
+            
+            elements.calculos.medico.almoco.valor.addEventListener('input', () => {
+                privateMethods.calculateMedicoTotal();
+            });
+            
+            elements.calculos.medico.correios.valor.addEventListener('input', () => {
+                privateMethods.calculateMedicoTotal();
+            });
+        },
         };
         
         // Inicialização

@@ -18,7 +18,6 @@
                                 <th class="px-4 py-3">CNPJ</th>
                                 <th class="px-4 py-3">Valor Líquido</th>
                                 <th class="px-4 py-3">Vencimento</th>
-                                <th class="px-4 py-3">Status</th>
                                 <th class="px-4 py-3">Data aprovação</th>
                                 <th class="px-4 py-3 text-center">Ações</th>
                             </tr>
@@ -30,13 +29,12 @@
                                     <td class="px-4 py-2">{{ $nota->cnpj ?? '-' }}</td>
                                     <td class="px-4 py-2">R$ {{ number_format($nota->valor_total, 2, ',', '.') }}</td>
                                     <td class="px-4 py-2">{{ \Carbon\Carbon::parse($nota->vencimento_original)->format('d/m/Y') }}</td>
-                                    <td class="px-4 py-2">
-                                        <span class="px-2 py-1 text-sm font-semibold rounded-full bg-blue-200 text-blue-800 dark:bg-blue-600 dark:text-blue-100">
-                                            {{ ucfirst(str_replace('_', ' ', $nota->status)) }}
-                                        </span>
-                                    </td>
+
                                     <td class="px-4 py-2">{{ \Carbon\Carbon::parse($nota->aprovado_chefia_em)->format('d/m/Y') }}</td>
                                     <td class="px-4 py-2 text-center">
+                                        <button onclick="openNoteModal('{{ $nota->id }}')" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </button>
                                         <button onclick="openPaymentModal('{{ route('financeiro.notas.aceitar', $nota) }}')" 
                                                 class="text-green-600 hover:underline">
                                             Registrar Pagamento
@@ -129,7 +127,20 @@
         @endif
     </div>
 </div>
-
+<!-- Modal de Visualização -->
+<div id="noteModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Detalhes da Nota</h3>
+            <button onclick="closeNoteModal()" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="noteModalContent" class="mt-4">
+            <!-- Conteúdo será carregado via AJAX -->
+        </div>
+    </div>
+</div>
 <script>
     function openPaymentModal(formAction) {
         document.getElementById('paymentForm').action = formAction;
@@ -144,6 +155,33 @@
         const modal = document.getElementById('paymentModal');
         if (event.target === modal) {
             closeModal();
+        }
+    }
+
+        // Visualizar nota
+    function openNoteModal(noteId) {
+        fetch(`/chefia/notas/${noteId}/detalhes`)
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('noteModalContent').innerHTML = html;
+                document.getElementById('noteModal').classList.remove('hidden');
+            });
+    }
+    
+    function closeNoteModal() {
+        document.getElementById('noteModal').classList.add('hidden');
+    }
+
+    // Fechar modais ao clicar fora
+    window.onclick = function(event) {
+        const rejectModal = document.getElementById('rejectModal');
+        const noteModal = document.getElementById('noteModal');
+        
+        if (event.target === rejectModal) {
+            closeModal();
+        }
+        if (event.target === noteModal) {
+            closeNoteModal();
         }
     }
 </script>

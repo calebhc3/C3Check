@@ -19,10 +19,25 @@
                 @endif
             </div>
             <p><strong>Valor Total Original:</strong> R$ {{ number_format($nota->valor_total, 2, ',', '.') }}</p>
-            @if ($nota->glosa_valor)
-                <p><strong>Valor Glosado:</strong> R$ {{ number_format($nota->glosa_valor, 2, ',', '.') }}</p>
-                <p><strong>Valor Final:</strong> R$ {{ number_format($nota->valor_total - $nota->glosa_valor, 2, ',', '.') }}</p>
+            @if ($nota->glosa_valor && $nota->glosa_valor > 0)
+                <div class="mt-4 bg-red-100 dark:bg-red-900 p-4 rounded-md border border-red-300 dark:border-red-700">
+                    <h5 class="text-md font-bold text-red-800 dark:text-red-200 mb-2">⚠️ Glosa Aplicada</h5>
+                    <p class="text-sm text-red-800 dark:text-red-100"><strong>Valor Glosado:</strong> R$ {{ number_format($nota->glosa_valor, 2, ',', '.') }}</p>
+
+                    @if ($nota->glosa_motivo)
+                        <p class="text-sm mt-1 italic text-red-700 dark:text-red-300">“{{ $nota->glosa_motivo }}”</p>
+                    @endif
+
+                    <p class="text-md mt-3 font-semibold text-red-900 dark:text-red-100">
+                        💸 Valor Final Após Glosa: 
+                        <span class="text-green-700 dark:text-green-300">
+                            R$ {{ number_format($nota->valor_total - $nota->glosa_valor, 2, ',', '.') }}
+                        </span>
+                    </p>
+                </div>
             @endif
+            
+
             <div><span class="font-bold">Tipo de Pagamento:</span> {{ ucfirst($nota->tipo_pagamento) }}</div>
         </div>
 

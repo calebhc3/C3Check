@@ -32,6 +32,9 @@ class Nota extends Model
         'aprovado_chefia_por',
         'confirmado_financeiro_em',
         'confirmado_financeiro_por',
+        'glosa_motivo',
+        'glosa_valor',
+        'motivo_rejeicao_chefia',
 
         // Campos para médicos
         'med_nome',

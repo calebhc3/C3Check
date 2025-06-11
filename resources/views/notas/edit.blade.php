@@ -83,15 +83,20 @@
                 <input type="file" name="arquivo_nf[]" id="arquivo_nf" accept="application/pdf"
                     multiple
                     class="w-full dark:bg-gray-700 dark:text-white border-gray-300 rounded-md mt-1" />
-
                 @if ($nota->arquivo_nf)
+                    @php
+                        $arquivos = is_array(json_decode($nota->arquivo_nf, true)) 
+                                    ? json_decode($nota->arquivo_nf, true) 
+                                    : [$nota->arquivo_nf];
+                    @endphp
+
                     <div class="mt-2">
                         <p class="text-sm text-gray-500">Arquivos atuais:</p>
-                        @foreach (json_decode($nota->arquivo_nf, true) as $arquivo)
+                        @foreach ($arquivos as $arquivo)
                             <a href="{{ asset('storage/' . $arquivo) }}" 
                             class="text-indigo-600 hover:text-indigo-800 text-sm underline block"
                             target="_blank">
-                            {{ basename($arquivo) }}
+                                {{ basename($arquivo) }}
                             </a>
                         @endforeach
                         <p class="text-xs text-gray-400 mt-1">
@@ -132,6 +137,24 @@
 
         <x-input-label for="valor_total" class="mt-5" value="Valor Total (R$)" />
         <x-text-input name="valor_total" id="valor_total" class="w-full mt-1" required type="number" step="0.01" value="{{ $nota->valor_total }}" />
+
+        {{-- Campos de Glosa --}}
+        <div class="mt-6 border-t pt-6">
+            <h3 class="text-lg font-semibold text-gray-700 mb-4">Glosa (se aplicável)</h3>
+            
+            <div class="mt-4">
+                <x-input-label for="glosa_motivo" value="Motivo da Glosa" />
+                <textarea name="glosa_motivo" id="glosa_motivo" rows="3"
+                        class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">{{ old('glosa_motivo', $nota->glosa_motivo ?? '') }}</textarea>
+            </div>
+
+            <div class="mt-4">
+                <x-input-label for="glosa_valor" value="Valor da Glosa (R$)" />
+                <x-text-input type="number" step="0.01" name="glosa_valor" id="glosa_valor"
+                            class="w-full"
+                            value="{{ old('glosa_valor', $nota->glosa_valor ?? '') }}" />
+            </div>
+        </div>
 
         <x-input-label for="tipo_pagamento" class="mt-5" value="Tipo de Pagamento" />
         <select name="tipo_pagamento" id="tipo_pagamento" class="w-full mt-1 mb-5 border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
