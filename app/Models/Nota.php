@@ -35,6 +35,10 @@ class Nota extends Model
         'glosa_motivo',
         'glosa_valor',
         'motivo_rejeicao_chefia',
+        'comprovante_path',
+        'cidade',
+        'estado',
+        'regiao',
 
         // Campos para médicos
         'med_nome',

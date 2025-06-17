@@ -52,6 +52,39 @@
                 <x-input-label for="cnpj" value="CNPJ" />
                 <x-text-input name="cnpj" id="cnpj" class="w-full" value="{{ $nota->cnpj }}" />
 
+                <x-input-label for="cidade" value="Cidade" />
+                <x-text-input 
+                    name="cidade" 
+                    id="cidade" 
+                    type="text" 
+                    class="w-full" 
+                    value="{{ old('cidade', $nota->cidade ?? '') }}" 
+                />
+
+                <x-input-label for="estado" value="Estado" />
+                <x-text-input 
+                    name="estado" 
+                    id="estado" 
+                    type="text" 
+                    class="w-full" 
+                    value="{{ old('estado', $nota->estado ?? '') }}" 
+                />
+
+                <x-input-label for="regiao" value="Região do Brasil" />
+                <select 
+                    name="regiao" 
+                    id="regiao" 
+                    class="w-full rounded border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                    <option value="">Selecione</option>
+                    @foreach(['Norte', 'Nordeste', 'Centro-Oeste', 'Sudeste', 'Sul'] as $regiao)
+                        <option value="{{ $regiao }}" 
+                            {{ old('regiao', $nota->regiao ?? '') === $regiao ? 'selected' : '' }}>
+                            {{ $regiao }}
+                        </option>
+                    @endforeach
+                </select>
+
                 <x-input-label for="vencimento_original" value="Vencimento Original" />
                 <x-text-input name="vencimento_original" id="vencimento_original" type="date" class="w-full" 
                     value="{{ \Carbon\Carbon::parse($nota->vencimento_original)->format('Y-m-d') }}" />

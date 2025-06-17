@@ -7,6 +7,11 @@
             <div><span class="font-bold">Número da NF:</span> {{ $nota->numero_nf }}</div>
             <div><span class="font-bold">Prestador:</span> {{ $nota->prestador }}</div>
             <div><span class="font-bold">CNPJ:</span> {{ $nota->cnpj }}</div>
+            @if ($nota->estado || $nota->cidade || $nota->regiao)
+            <div><span class="font-bold">Estado:</span> {{ $nota->estado }}</div>
+            <div><span class="font-bold">Cidade:</span> {{ $nota->cidade }}</div>
+            <div><span class="font-bold">Região:</span> {{ $nota->regiao }}</div>
+            @endif
             <div><span class="font-bold">Vencimento Original:</span> {{ \Carbon\Carbon::parse($nota->vencimento_original)->format('d/m/Y') }}</div>
             <div><span class="font-bold">Data Entregue ao Financeiro:</span> {{ \Carbon\Carbon::parse($nota->data_entregue_financeiro)->format('d/m/Y') }}</div>
             <div><span class="font-bold">Mês de Referência:</span> {{ $nota->mes }}</div>

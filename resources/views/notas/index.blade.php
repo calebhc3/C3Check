@@ -87,14 +87,12 @@
                                         </span>
                                     </td>
                                     <td class="px-4 py-2">
-                                        @if($nota->status === 'finalizada' && $nota->comprovante_path)
-                                            <a href="{{ route('notas.comprovante', $nota) }}" target="_blank" 
-                                               class="text-blue-600 hover:underline dark:text-blue-400">
-                                                Visualizar
-                                            </a>
-                                        @else
-                                            -
-                                        @endif
+                                    @if($nota->comprovante_path)
+                                        <a href="{{ route('notas.comprovante', $nota) }}" target="_blank">Clique aqui</a>
+                                    @else
+                                        -
+                                    @endif
+
                                     </td>
                                     <td class="px-4 py-2 text-sm text-red-600 dark:text-red-400">
                                         @if($nota->status === 'rejeitada' && $nota->motivo_rejeicao_chefia)

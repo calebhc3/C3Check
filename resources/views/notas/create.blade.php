@@ -55,6 +55,23 @@
                 <x-input-label for="cnpj" value="CNPJ" />
                 <x-text-input name="cnpj" id="cnpj" class="w-full" />
 
+                <x-input-label for="cidade" value="Cidade" />
+                <x-text-input name="cidade" id="cidade" type="text" class="w-full" value="{{ old('cidade', $nota->cidade ?? '') }}" />
+
+                <x-input-label for="estado" value="Estado" />
+                <x-text-input name="estado" id="estado" type="text" class="w-full" value="{{ old('estado', $nota->estado ?? '') }}" />
+
+                <x-input-label for="regiao" value="Região do Brasil" />
+                <select name="regiao" id="regiao" class="w-full rounded border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">Selecione</option>
+                    @foreach(['Norte', 'Nordeste', 'Centro-Oeste', 'Sudeste', 'Sul'] as $regiao)
+                        <option value="{{ $regiao }}" {{ old('regiao', $nota->regiao ?? '') === $regiao ? 'selected' : '' }}>
+                            {{ $regiao }}
+                        </option>
+                    @endforeach
+                </select>
+
+
                 <x-input-label for="vencimento_original" value="Vencimento Original" />
                 <x-text-input name="vencimento_original" id="vencimento_original" type="date" class="w-full" />
 
@@ -67,7 +84,7 @@
                 <div class="md:col-span-2">
                     <x-input-label for="taxa_correio" value="Taxa de Correio?" />
                     <div class="flex items-center mt-2">
-                        <input type="checkbox" name="taxa_correio" id="taxa_correio" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <input type="checkbox" name="taxa_correio" id="taxa_correio" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" value="1">
                         <x-input-label for="valor_taxa_correio" value="Valor da Taxa (R$)" class="ml-4 mr-2" />
                         <x-text-input name="valor_taxa_correio" id="valor_taxa_correio" type="number" step="0.01" class="w-32" disabled />
                     </div>
@@ -83,6 +100,9 @@
                 class="w-full dark:bg-gray-700 dark:text-white border-gray-300 rounded-md"
             />
             </div>
+            @error('arquivo_nf')
+                <div class="alert alert-danger">{{ $message }}</div>
+            @enderror
         </div>
 
         {{-- Seção: Clientes Atendidos --}}
@@ -134,23 +154,26 @@
                 <x-input-label value="Glosar nota?" />
                 <div class="flex items-center mt-2">
                     <div class="flex items-center mr-4">
-                        <input type="radio" name="glosar" id="glosar_clinica_sim" value="1" onchange="toggleGlosa('clinica', true)" 
-                            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <input type="radio" name="glosar" id="glosar_clinica_sim" value="1" 
+                            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                            @if(old('glosar', isset($nota) ? $nota->glosar : false)) checked @endif>
                         <x-input-label for="glosar_clinica_sim" value="Sim" class="ml-2" />
                     </div>
                     <div class="flex items-center">
-                        <input type="radio" name="glosar" id="glosar_clinica_nao" value="0" onchange="toggleGlosa('clinica', false)" checked 
-                            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <input type="radio" name="glosar" id="glosar_clinica_nao" value="0"
+                            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                            @if(!old('glosar', isset($nota) ? $nota->glosar : false)) checked @endif>
                         <x-input-label for="glosar_clinica_nao" value="Não" class="ml-2" />
                     </div>
                 </div>
             </div>
 
-            <div id="glosaClinicaCampos" class="md:col-span-2" style="display: none;">
+            <div id="glosaClinicaCampos" class="md:col-span-2" style="{{ old('glosar', isset($nota) ? $nota->glosar : false) ? '' : 'display: none;' }}">
                 <div class="mt-4">
                     <x-input-label for="glosa_motivo" value="Motivo da Glosa" />
                     <textarea name="glosa_motivo" id="glosa_motivo" rows="3" 
-                            class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                            class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                            @if(old('glosar', isset($nota) ? $nota->glosar : false)) required @endif>
                         {{ old('glosa_motivo', $nota->glosa_motivo ?? '') }}
                     </textarea>
                 </div>
@@ -159,7 +182,8 @@
                     <x-input-label for="glosa_valor" value="Valor da Glosa (R$)" />
                     <x-text-input type="number" step="0.01" name="glosa_valor" id="glosa_valor" 
                                 class="w-full" 
-                                value="{{ old('glosa_valor', $nota->glosa_valor ?? '') }}" />
+                                value="{{ old('glosa_valor', $nota->glosa_valor ?? '') }}"
+                                @if(old('glosar', isset($nota) ? $nota->glosar : false)) required @endif />
                 </div>
             </div>
         </div>

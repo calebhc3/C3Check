@@ -61,12 +61,6 @@
                             <input type="file" name="comprovante" required 
                                    class="w-full px-3 py-2 border rounded-lg text-gray-700 focus:outline-none dark:bg-gray-700 dark:text-white dark:border-gray-600">
                         </div>
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observações</label>
-                            <textarea name="observacao" rows="3" 
-                                      class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                                      placeholder="Informações adicionais sobre o pagamento..."></textarea>
-                        </div>
                         <div class="mt-4 flex justify-between">
                             <button type="button" onclick="closeModal()" 
                                     class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500">
