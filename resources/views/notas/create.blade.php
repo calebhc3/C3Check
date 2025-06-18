@@ -183,7 +183,7 @@
                     <x-text-input type="number" step="0.01" name="glosa_valor" id="glosa_valor" 
                                 class="w-full" 
                                 value="{{ old('glosa_valor', $nota->glosa_valor ?? '') }}"
-                                @if(old('glosar', isset($nota) ? $nota->glosar : false)) required @endif />
+                                :required="old('glosar', isset($nota) ? $nota->glosar : false)" />
                 </div>
             </div>
         </div>
@@ -320,14 +320,491 @@
     </div>
 </form>
 <script>
-function toggleGlosa(formType, show) {
-    const glosaCampos = document.getElementById(`glosa${formType.charAt(0).toUpperCase() + formType.slice(1)}Campos`);
-    if (glosaCampos) {
-        glosaCampos.style.display = show ? 'block' : 'none';
+/**
+ * FormManager - Gerenciador de formulários modularizado
+ */
+class FormManager {
+  constructor() {
+    this.state = {
+      currentForm: 'clinica',
+      clienteCount: 1,
+      horarioCount: 1
+    };
+
+    this.cacheElements();
+    this.initEventListeners();
+    this.initializeForms();
+  }
+
+  // Cache de elementos DOM
+  cacheElements() {
+    this.elements = {
+      forms: {
+        clinica: document.getElementById('clinica-form'),
+        medico: document.getElementById('medico-form')
+      },
+      radioButtons: {
+        clinica: document.getElementById('tipo_clinica'),
+        medico: document.getElementById('tipo_medico')
+      },
+      labels: {
+        clinica: document.getElementById('label_clinica'),
+        medico: document.getElementById('label_medico')
+      },
+      buttons: {
+        addCliente: document.getElementById('add-cliente'),
+        addHorario: document.getElementById('add-horario')
+      },
+      wrappers: {
+        clientes: document.getElementById('clientes-wrapper'),
+        horarios: document.getElementById('med-horarios-wrapper')
+      },
+      calculos: {
+        valorTotal: document.getElementById('valor_total'),
+        taxaCorreio: {
+          checkbox: document.getElementById('taxa_correio'),
+          valor: document.getElementById('valor_taxa_correio')
+        },
+        medico: {
+          deslocamento: {
+            checkbox: document.getElementById('med_deslocamento'),
+            valor: document.getElementById('med_valor_deslocamento')
+          },
+          almoco: {
+            checkbox: document.getElementById('med_cobrou_almoco'),
+            valor: document.getElementById('med_valor_almoco')
+          },
+          correios: {
+            checkbox: document.getElementById('med_reembolso_correios'),
+            valor: document.getElementById('med_valor_correios')
+          },
+          totalFinal: document.getElementById('med_valor_total_final')
+        }
+      }
+    };
+  }
+
+  // Inicialização dos listeners
+  initEventListeners() {
+    // Listeners para troca de formulários
+    this.elements.radioButtons.clinica.addEventListener('change', () => this.switchForm('clinica'));
+    this.elements.radioButtons.medico.addEventListener('change', () => this.switchForm('medico'));
+
+    // Listeners para formulário clínica
+    this.setupClinicaListeners();
+    
+    // Listeners para formulário médico
+    this.setupMedicoListeners();
+    
+    // Listeners para campos condicionais
+    this.setupConditionalFieldsListeners();
+  }
+
+  // Inicialização dos formulários
+  initializeForms() {
+    this.updateFormStyles();
+    this.calculateCurrentFormTotal();
+    
+    // Configura listeners para o primeiro item de horário
+    const firstItem = this.elements.wrappers.horarios?.querySelector('.horario-item');
+    if (firstItem) {
+      this.setupDayListeners(firstItem);
     }
+  }
+
+  // Métodos para troca de formulários
+  switchForm(formType) {
+    this.state.currentForm = formType;
+    this.toggleFormVisibility();
+    this.updateFormStyles();
+    this.calculateCurrentFormTotal();
+  }
+
+  toggleFormVisibility() {
+    this.elements.forms.clinica.classList.toggle('hidden', this.state.currentForm !== 'clinica');
+    this.elements.forms.medico.classList.toggle('hidden', this.state.currentForm !== 'medico');
+  }
+
+  updateFormStyles() {
+    const activeClasses = ['bg-indigo-600', 'text-white', 'border-indigo-600', 'hover:bg-indigo-700'];
+    const inactiveClasses = ['bg-white', 'text-gray-900', 'border-gray-200', 'hover:bg-gray-50'];
+
+    const toggleClasses = (element, isActive) => {
+      element.classList.remove(...(isActive ? inactiveClasses : activeClasses));
+      element.classList.add(...(isActive ? activeClasses : inactiveClasses));
+    };
+
+    toggleClasses(this.elements.labels.clinica, this.state.currentForm === 'clinica');
+    toggleClasses(this.elements.labels.medico, this.state.currentForm === 'medico');
+  }
+
+// Métodos para formulário clínica
+setupClinicaListeners() {
+  if (!this.elements.buttons.addCliente) return;
+
+  // Listener para adicionar cliente
+  this.elements.buttons.addCliente.addEventListener('click', () => this.addCliente());
+  
+  // Listener delegado para cálculo automático
+  this.elements.wrappers.clientes.addEventListener('input', (e) => {
+    if (e.target.matches('input[name^="clientes"][name$="[valor]"]')) {
+      this.calculateClinicaTotal();
+    }
+  });
+  
+  // Listener para taxa de correio
+  if (this.elements.calculos.taxaCorreio?.valor) {
+    this.elements.calculos.taxaCorreio.valor.addEventListener('input', () => this.calculateClinicaTotal());
+  }
+  
+  // Listener para glosa
+  document.querySelectorAll('input[name="glosar"]').forEach(radio => {
+    radio.addEventListener('change', () => this.calculateClinicaTotal());
+  });
+  
+  document.getElementById('glosa_valor')?.addEventListener('input', () => this.calculateClinicaTotal());
 }
 
-function checkTipoNota() {
+addCliente() {
+  const clienteHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 cliente-item bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner mt-4">
+      <div>
+        <x-input-label value="Cliente Atendido" />
+        <x-text-input name="clientes[${this.state.clienteCount}][cliente_atendido]" class="w-full" />
+      </div>
+      <div>
+        <x-input-label value="Valor (R$)" />
+        <x-text-input name="clientes[${this.state.clienteCount}][valor]" type="number" step="0.01" class="w-full cliente-valor" />
+      </div>
+      <div class="md:col-span-2">
+        <x-input-label value="Observação" />
+        <textarea name="clientes[${this.state.clienteCount}][observacao]" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-600 dark:text-white"></textarea>
+      </div>
+    </div>
+  `;
+  
+  this.elements.wrappers.clientes.insertAdjacentHTML('beforeend', clienteHTML);
+  
+  // Configura listener para o novo campo de valor
+  const newInput = this.elements.wrappers.clientes.lastElementChild.querySelector('.cliente-valor');
+  newInput.addEventListener('input', () => this.calculateClinicaTotal());
+  
+  this.state.clienteCount++;
+}
+
+calculateClinicaTotal() {
+  let total = 0;
+
+  // 1. Somar valores dos clientes
+  const valoresClientes = this.elements.wrappers.clientes.querySelectorAll('input[name^="clientes"][name$="[valor]"]');
+  valoresClientes.forEach(input => {
+    total += parseFloat(input.value) || 0;
+  });
+
+  // 2. Adicionar taxa de correio se marcada
+  if (this.elements.calculos.taxaCorreio?.checkbox?.checked) {
+    total += parseFloat(this.elements.calculos.taxaCorreio.valor.value) || 0;
+  }
+
+  // 3. Subtrair valor da glosa se aplicável
+  const glosaAtiva = document.querySelector('input[name="glosar"][value="1"]')?.checked;
+  const valorGlosa = parseFloat(document.getElementById('glosa_valor')?.value) || 0;
+  
+  if (glosaAtiva && valorGlosa > 0) {
+    total -= valorGlosa;
+    total = Math.max(total, 0); // Garante que não fique negativo
+  }
+
+  // 4. Atualizar o campo de total
+  if (this.elements.calculos.valorTotal) {
+    this.elements.calculos.valorTotal.value = total.toFixed(2);
+  }
+}
+
+  // Métodos para formulário médico
+  setupMedicoListeners() {
+    if (!this.elements.buttons.addHorario) return;
+
+    this.elements.buttons.addHorario.addEventListener('click', () => this.addHorario());
+    
+    // Listeners para campos condicionais
+    const medicoFields = this.elements.calculos.medico;
+    if (medicoFields.deslocamento.valor) {
+      medicoFields.deslocamento.valor.addEventListener('input', () => this.calculateMedicoTotal());
+    }
+    if (medicoFields.almoco.valor) {
+      medicoFields.almoco.valor.addEventListener('input', () => this.calculateMedicoTotal());
+    }
+    if (medicoFields.correios.valor) {
+      medicoFields.correios.valor.addEventListener('input', () => this.calculateMedicoTotal());
+    }
+  }
+
+  addHorario() {
+    const horarioHTML = `
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4 horario-item bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner mt-4">
+        <div>
+          <x-input-label value="Data" />
+          <x-text-input name="med_horarios[${this.state.horarioCount}][data]" type="date" class="w-full" />
+        </div>
+        <div>
+          <x-input-label value="Entrada" />
+          <x-text-input name="med_horarios[${this.state.horarioCount}][entrada]" type="time" class="w-full entrada" />
+        </div>
+        <div>
+          <x-input-label value="Saída Almoço" />
+          <x-text-input name="med_horarios[${this.state.horarioCount}][saida_almoco]" type="time" class="w-full saida-almoco" />
+        </div>
+        <div>
+          <x-input-label value="Retorno Almoço" />
+          <x-text-input name="med_horarios[${this.state.horarioCount}][retorno_almoco]" type="time" class="w-full retorno-almoco" />
+        </div>
+        <div>
+          <x-input-label value="Saída" />
+          <x-text-input name="med_horarios[${this.state.horarioCount}][saida]" type="time" class="w-full saida" />
+        </div>
+        <div class="md:col-span-2">
+          <x-input-label value="Valor por Hora (R$)" />
+          <x-text-input name="med_horarios[${this.state.horarioCount}][valor_hora]" type="number" step="0.01" class="w-full valor-hora" />
+        </div>
+        <div class="md:col-span-2">
+          <x-input-label value="Total (R$)" />
+          <x-text-input name="med_horarios[${this.state.horarioCount}][total]" type="number" step="0.01" class="w-full total" readonly />
+        </div>
+        <div class="md:col-span-1">
+          <x-input-label value="Horas" />
+          <x-text-input name="med_horarios[${this.state.horarioCount}][horas_trabalhadas]" type="text" class="w-full horas-trabalhadas" readonly />
+        </div>
+      </div>
+    `;
+    
+    this.elements.wrappers.horarios.insertAdjacentHTML('beforeend', horarioHTML);
+    
+    // Configura os listeners para o novo item
+    const newItem = this.elements.wrappers.horarios.lastElementChild;
+    this.setupDayListeners(newItem);
+    
+    this.state.horarioCount++;
+  }
+
+  setupDayListeners(item) {
+    const fields = {
+      entrada: item.querySelector('.entrada'),
+      saidaAlmoco: item.querySelector('.saida-almoco'),
+      retornoAlmoco: item.querySelector('.retorno-almoco'),
+      saida: item.querySelector('.saida'),
+      valorHora: item.querySelector('.valor-hora'),
+      total: item.querySelector('.total'),
+      horasTrabalhadas: item.querySelector('.horas-trabalhadas')
+    };
+
+    const calculateDay = () => {
+      if (fields.entrada.value && fields.saida.value && fields.valorHora.value) {
+        const result = this.calculateDayTotal(
+          fields.entrada.value,
+          fields.saidaAlmoco.value,
+          fields.retornoAlmoco.value,
+          fields.saida.value,
+          parseFloat(fields.valorHora.value)
+        );
+        
+        fields.total.value = result.valor;
+        fields.horasTrabalhadas.value = result.horas;
+        this.calculateMedicoTotal();
+      }
+    };
+
+    Object.values(fields).forEach(field => {
+      if (field && (field.classList.contains('entrada') || 
+          field.classList.contains('saida-almoco') || 
+          field.classList.contains('retorno-almoco') || 
+          field.classList.contains('saida') || 
+          field.classList.contains('valor-hora'))) {
+        field.addEventListener('change', calculateDay);
+      }
+    });
+  }
+
+  calculateDayTotal(entrada, saidaAlmoco, retornoAlmoco, saida, valorHora) {
+    const toMinutes = time => {
+      if (!time) return 0;
+      const [hours, minutes] = time.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+
+    const entradaMin = toMinutes(entrada);
+    const saidaAlmocoMin = toMinutes(saidaAlmoco);
+    const retornoAlmocoMin = toMinutes(retornoAlmoco);
+    const saidaMin = toMinutes(saida);
+
+    let totalMinutes = 0;
+
+    if (entrada && saida) {
+      if (saidaAlmoco && retornoAlmoco) {
+        const manha = saidaAlmocoMin - entradaMin;
+        const tarde = saidaMin - retornoAlmocoMin;
+        totalMinutes = manha + tarde;
+      } else {
+        totalMinutes = saidaMin - entradaMin;
+      }
+    }
+
+    const horasTrabalhadas = totalMinutes / 60;
+    const horas = Math.floor(totalMinutes / 60);
+    const minutos = totalMinutes % 60;
+    
+    return {
+      valor: parseFloat((horasTrabalhadas * valorHora).toFixed(2)),
+      horas: `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`
+    };
+  }
+
+  calculateMedicoTotal() {
+    let totalValor = 0;
+    let totalHoras = 0;
+    let totalMinutos = 0;
+    
+    // Soma todos os dias de trabalho
+    this.elements.wrappers.horarios.querySelectorAll('.horario-item').forEach(item => {
+      const totalField = item.querySelector('.total');
+      const horasField = item.querySelector('.horas-trabalhadas');
+      
+      if (totalField?.value) {
+        totalValor += parseFloat(totalField.value);
+      }
+      
+      if (horasField?.value) {
+        const [horas, minutos] = horasField.value.split(':').map(Number);
+        totalHoras += horas;
+        totalMinutos += minutos;
+      }
+    });
+    
+    // Converter minutos excedentes em horas
+    totalHoras += Math.floor(totalMinutos / 60);
+    totalMinutos = totalMinutos % 60;
+    
+    // Adiciona extras se marcados
+    const medicoFields = this.elements.calculos.medico;
+    
+    if (medicoFields.deslocamento.checkbox?.checked) {
+      totalValor += parseFloat(medicoFields.deslocamento.valor.value) || 0;
+    }
+    
+    if (medicoFields.almoco.checkbox?.checked) {
+      totalValor += parseFloat(medicoFields.almoco.valor.value) || 0;
+    }
+    
+    if (medicoFields.correios.checkbox?.checked) {
+      totalValor += parseFloat(medicoFields.correios.valor.value) || 0;
+    }
+    
+    // Atualiza o campo total final
+    if (medicoFields.totalFinal) {
+      medicoFields.totalFinal.value = totalValor.toFixed(2);
+    }
+    
+    // Atualiza o total de horas
+    const totalHorasElement = document.getElementById('med_total_horas');
+    if (totalHorasElement) {
+      totalHorasElement.value = `${totalHoras.toString().padStart(2, '0')}:${totalMinutos.toString().padStart(2, '0')}`;
+    }
+  }
+
+  // Métodos para campos condicionais
+  setupConditionalFieldsListeners() {
+    const setupConditionalField = (checkbox, valorField) => {
+      if (!checkbox || !valorField) return;
+      
+      checkbox.addEventListener('change', () => {
+        valorField.disabled = !checkbox.checked;
+        if (checkbox.checked) {
+          valorField.focus();
+        }
+        this.calculateCurrentFormTotal();
+      });
+    };
+
+    // Campos condicionais - Clínica
+    if (this.elements.calculos.taxaCorreio) {
+      setupConditionalField(
+        this.elements.calculos.taxaCorreio.checkbox,
+        this.elements.calculos.taxaCorreio.valor
+      );
+    }
+
+    // Campos condicionais - Médico
+    const medicoFields = this.elements.calculos.medico;
+    if (medicoFields) {
+      setupConditionalField(medicoFields.deslocamento.checkbox, medicoFields.deslocamento.valor);
+      setupConditionalField(medicoFields.almoco.checkbox, medicoFields.almoco.valor);
+      setupConditionalField(medicoFields.correios.checkbox, medicoFields.correios.valor);
+    }
+  }
+
+  // Método auxiliar para calcular o total do formulário atual
+  calculateCurrentFormTotal() {
+    if (this.state.currentForm === 'clinica') {
+      this.calculateClinicaTotal();
+    } else {
+      this.calculateMedicoTotal();
+    }
+  }
+}
+
+// Inicialização quando o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', () => {
+  new FormManager();
+});
+
+/**
+ * Glosa Manager - Gerenciador independente para campos de glosa
+ */
+class GlosaManager {
+  static toggle(formType, show) {
+    const glosaCampos = document.getElementById(`glosa${this.capitalizeFirstLetter(formType)}Campos`);
+    if (glosaCampos) {
+      glosaCampos.style.display = show ? 'block' : 'none';
+    }
+  }
+
+  static capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  }
+
+  static init() {
+    // Configura listeners para os radio buttons de glosa
+    document.querySelectorAll('input[name="glosar"], input[name="med_glosar"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        const formType = e.target.name === 'glosar' ? 'clinica' : 'medico';
+        this.toggle(formType, e.target.value === '1');
+      });
+    });
+
+    // Auto mostrar glosa se já vier com valor preenchido (edição)
+    this.checkPreFilledGlosa('clinica', 'glosa_valor', 'glosar');
+    this.checkPreFilledGlosa('medico', 'med_glosa_valor', 'med_glosar');
+  }
+
+  static checkPreFilledGlosa(formType, valorId, radioName) {
+    const glosaValor = parseFloat(document.getElementById(valorId)?.value) || 0;
+    if (glosaValor > 0) {
+      document.querySelector(`input[name="${radioName}"][value="1"]`).checked = true;
+      this.toggle(formType, true);
+    }
+    }
+    }
+
+// Inicializa o gerenciador de glosa
+document.addEventListener('DOMContentLoaded', () => {
+  GlosaManager.init();
+});
+
+/**
+ * TipoNota Manager - Gerenciador para tipo de nota
+ */
+class TipoNotaManager {
+  static check() {
     const tipoNota = document.querySelector('input[name="tipo_nota"]:checked')?.value;
     
     // Mostra/oculta os formulários principais
@@ -336,483 +813,27 @@ function checkTipoNota() {
     
     // Reseta os campos de glosa quando muda o tipo
     if (tipoNota === 'clinica') {
-        document.querySelector('input[name="glosar"][value="0"]').checked = true;
-        toggleGlosa('clinica', false);
+      document.querySelector('input[name="glosar"][value="0"]').checked = true;
+      GlosaManager.toggle('clinica', false);
     } else if (tipoNota === 'medico') {
-        document.querySelector('input[name="med_glosar"][value="0"]').checked = true;
-        toggleGlosa('medico', false);
+      document.querySelector('input[name="med_glosar"][value="0"]').checked = true;
+      GlosaManager.toggle('medico', false);
     }
-}
+  }
 
-window.addEventListener('DOMContentLoaded', () => {
-    checkTipoNota();
+  static init() {
+    this.check();
 
     // Configura listeners para os radio buttons de tipo de nota
     document.querySelectorAll('input[name="tipo_nota"]').forEach(radio => {
-        radio.addEventListener('change', checkTipoNota);
+      radio.addEventListener('change', this.check.bind(this));
     });
+  }
+}
 
-    // Auto mostrar glosa se já vier com valor preenchido (edição)
-    const glosaValor = parseFloat(document.getElementById('glosa_valor')?.value || 0);
-    if (glosaValor > 0) {
-        document.querySelector('input[name="glosar"][value="1"]').checked = true;
-        toggleGlosa('clinica', true);
-    }
-
-    const medGlosaValor = parseFloat(document.getElementById('med_glosa_valor')?.value || 0);
-    if (medGlosaValor > 0) {
-        document.querySelector('input[name="med_glosar"][value="1"]').checked = true;
-        toggleGlosa('medico', true);
-    }
-});
-/**
- * FormManager - Singleton para gerenciamento de formulários
- */
-const FormManager = (function() {
-    let instance;
-    
-    function createInstance() {
-        // Estado do formulário
-        const state = {
-            currentForm: 'clinica',
-            clienteCount: 1,
-            horarioCount: 1
-        };
-        
-        // Elementos do DOM
-        const elements = {
-            forms: {
-                clinica: document.getElementById('clinica-form'),
-                medico: document.getElementById('medico-form')
-            },
-            radioButtons: {
-                clinica: document.getElementById('tipo_clinica'),
-                medico: document.getElementById('tipo_medico')
-            },
-            labels: {
-                clinica: document.getElementById('label_clinica'),
-                medico: document.getElementById('label_medico')
-            },
-            buttons: {
-                addCliente: document.getElementById('add-cliente'),
-                addHorario: document.getElementById('add-horario')
-            },
-            wrappers: {
-                clientes: document.getElementById('clientes-wrapper'),
-                horarios: document.getElementById('med-horarios-wrapper')
-            },
-            calculos: {
-                valorTotal: document.getElementById('valor_total'),
-                taxaCorreio: {
-                    checkbox: document.getElementById('taxa_correio'),
-                    valor: document.getElementById('valor_taxa_correio')
-                },
-                medico: {
-                    deslocamento: {
-                        checkbox: document.getElementById('med_deslocamento'),
-                        valor: document.getElementById('med_valor_deslocamento')
-                    },
-                    almoco: {
-                        checkbox: document.getElementById('med_cobrou_almoco'),
-                        valor: document.getElementById('med_valor_almoco')
-                    },
-                    correios: {
-                        checkbox: document.getElementById('med_reembolso_correios'),
-                        valor: document.getElementById('med_valor_correios')
-                    },
-                    totalFinal: document.getElementById('med_valor_total_final')
-                }
-            }
-        };
-        
-        // Classes CSS
-        const classes = {
-            active: ['bg-indigo-600', 'text-white', 'border-indigo-600', 'hover:bg-indigo-700'],
-            inactive: ['bg-white', 'text-gray-900', 'border-gray-200', 'hover:bg-gray-50']
-        };
-        
-        // Métodos privados
-        const privateMethods = {
-            toggleClasses(element, addClasses, removeClasses) {
-                element.classList.remove(...removeClasses);
-                element.classList.add(...addClasses);
-            },
-            
-            updateFormStyles() {
-                if (state.currentForm === 'clinica') {
-                    privateMethods.toggleClasses(
-                        elements.labels.clinica, 
-                        classes.active, 
-                        classes.inactive
-                    );
-                    privateMethods.toggleClasses(
-                        elements.labels.medico, 
-                        classes.inactive, 
-                        classes.active
-                    );
-                } else {
-                    privateMethods.toggleClasses(
-                        elements.labels.medico, 
-                        classes.active, 
-                        classes.inactive
-                    );
-                    privateMethods.toggleClasses(
-                        elements.labels.clinica, 
-                        classes.inactive, 
-                        classes.active
-                    );
-                }
-            },
-            
-            toggleFormVisibility() {
-                elements.forms.clinica.classList.toggle('hidden', state.currentForm !== 'clinica');
-                elements.forms.medico.classList.toggle('hidden', state.currentForm !== 'medico');
-            },
-            
-            setupConditionalFields() {
-                // Campos condicionais - Clínica
-                elements.calculos.taxaCorreio.checkbox.addEventListener('change', () => {
-                    const { valor } = elements.calculos.taxaCorreio;
-                    valor.disabled = !elements.calculos.taxaCorreio.checkbox.checked;
-                    if (elements.calculos.taxaCorreio.checkbox.checked) {
-                        valor.focus();
-                    }
-                    privateMethods.calculateClinicaTotal();
-                });
-                
-                // Campos condicionais - Médico
-                elements.calculos.medico.deslocamento.checkbox.addEventListener('change', () => {
-                    const { valor } = elements.calculos.medico.deslocamento;
-                    valor.disabled = !elements.calculos.medico.deslocamento.checkbox.checked;
-                    privateMethods.calculateMedicoTotal();
-                });
-                
-                elements.calculos.medico.almoco.checkbox.addEventListener('change', () => {
-                    const { valor } = elements.calculos.medico.almoco;
-                    valor.disabled = !elements.calculos.medico.almoco.checkbox.checked;
-                    privateMethods.calculateMedicoTotal();
-                });
-                
-                elements.calculos.medico.correios.checkbox.addEventListener('change', () => {
-                    const { valor } = elements.calculos.medico.correios;
-                    valor.disabled = !elements.calculos.medico.correios.checkbox.checked;
-                    privateMethods.calculateMedicoTotal();
-                });
-            },
-            
-            timeToMinutes(time) {
-                if (!time) return 0;
-                const [hours, minutes] = time.split(':').map(Number);
-                return hours * 60 + minutes;
-            },
-            
-            calculateDayTotal(entrada, saidaAlmoco, retornoAlmoco, saida, valorHora) {
-            const entradaMin = privateMethods.timeToMinutes(entrada);
-            const saidaAlmocoMin = privateMethods.timeToMinutes(saidaAlmoco);
-            const retornoAlmocoMin = privateMethods.timeToMinutes(retornoAlmoco);
-            const saidaMin = privateMethods.timeToMinutes(saida);
-
-            let totalMinutes = 0;
-
-
-            
-            if (entrada && saida) {
-                if (saidaAlmoco && retornoAlmoco) {
-                    const manha = saidaAlmocoMin - entradaMin;
-                    const tarde = saidaMin - retornoAlmocoMin;
-                    totalMinutes = manha + tarde;
-                } else {
-                    totalMinutes = saidaMin - entradaMin;
-                }
-            }
-
-            const horasTrabalhadas = totalMinutes / 60;
-            const horas = Math.floor(totalMinutes / 60);
-            const minutos = totalMinutes % 60;
-            
-            return {
-                valor: parseFloat((horasTrabalhadas * valorHora).toFixed(2)),
-                horas: `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`
-            };
-        },
-
-            formatHours(totalMinutes) {
-                const hours = Math.floor(totalMinutes / 60);
-                const minutes = Math.round(totalMinutes % 60);
-                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-            },
-            
-            setupDayListeners(item) {
-                const entrada = item.querySelector('.entrada');
-                const saidaAlmoco = item.querySelector('.saida-almoco');
-                const retornoAlmoco = item.querySelector('.retorno-almoco');
-                const saida = item.querySelector('.saida');
-                const valorHora = item.querySelector('.valor-hora');
-                const total = item.querySelector('.total');
-                const horasTrabalhadas = item.querySelector('.horas-trabalhadas');
-                
-                const calculateDay = () => {
-                    if (entrada.value && saida.value && valorHora.value) {
-                        const result = privateMethods.calculateDayTotal(
-                            entrada.value,
-                            saidaAlmoco.value,
-                            retornoAlmoco.value,
-                            saida.value,
-                            parseFloat(valorHora.value)
-                        );
-                        
-                        total.value = result.valor;
-                        horasTrabalhadas.value = result.horas;
-                        privateMethods.calculateMedicoTotal();
-                    }
-                };
-                
-                entrada.addEventListener('change', calculateDay);
-                saidaAlmoco.addEventListener('change', calculateDay);
-                retornoAlmoco.addEventListener('change', calculateDay);
-                saida.addEventListener('change', calculateDay);
-                valorHora.addEventListener('input', calculateDay);
-            },
-            
-            calculateClinicaTotal() {
-                let total = 0;
-
-                // Somar valores dos clientes
-                const valoresClientes = elements.wrappers.clientes.querySelectorAll('input[name^="clientes"][name$="[valor]"]');
-                valoresClientes.forEach(input => {
-                    const valor = parseFloat(input.value) || 0;
-                    total += valor;
-                });
-
-                // Adicionar taxa de correio se marcada
-                if (elements.calculos.taxaCorreio.checkbox.checked) {
-                    const taxa = parseFloat(elements.calculos.taxaCorreio.valor.value) || 0;
-                    total += taxa;
-                }
-
-                elements.calculos.valorTotal.value = total.toFixed(2);
-            },
-            
-            calculateMedicoTotal() {
-            let totalValor = 0;
-            let totalHoras = 0;
-            let totalMinutos = 0;
-            
-            // Soma todos os dias de trabalho
-            elements.wrappers.horarios.querySelectorAll('.horario-item').forEach(item => {
-                const totalField = item.querySelector('.total');
-                const horasField = item.querySelector('.horas-trabalhadas');
-                
-                if (totalField && totalField.value) {
-                    totalValor += parseFloat(totalField.value);
-                }
-                
-                if (horasField && horasField.value) {
-                    const [horas, minutos] = horasField.value.split(':').map(Number);
-                    totalHoras += horas;
-                    totalMinutos += minutos;
-                }
-            });
-            
-            // Converter minutos excedentes em horas
-            totalHoras += Math.floor(totalMinutos / 60);
-            totalMinutos = totalMinutos % 60;
-            
-            // Adiciona deslocamento se marcado
-            if (elements.calculos.medico.deslocamento.checkbox.checked) {
-                totalValor += parseFloat(elements.calculos.medico.deslocamento.valor.value) || 0;
-            }
-            
-            // Adiciona almoço se marcado
-            if (elements.calculos.medico.almoco.checkbox.checked) {
-                totalValor += parseFloat(elements.calculos.medico.almoco.valor.value) || 0;
-            }
-            
-            // Adiciona correios se marcado
-            if (elements.calculos.medico.correios.checkbox.checked) {
-                totalValor += parseFloat(elements.calculos.medico.correios.valor.value) || 0;
-            }
-            
-            // Atualiza o campo total final
-            elements.calculos.medico.totalFinal.value = totalValor.toFixed(2);
-            
-            // Atualiza o total de horas (adicionar este campo no seu HTML se ainda não existir)
-            const totalHorasElement = document.getElementById('med_total_horas');
-            if (totalHorasElement) {
-                totalHorasElement.value = `${totalHoras.toString().padStart(2, '0')}:${totalMinutos.toString().padStart(2, '0')}`;
-            }
-        },
-            
-            setupClinicaListeners() {
-                // Listener para adicionar cliente
-                elements.buttons.addCliente.addEventListener('click', () => {
-                    const html = `
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 cliente-item bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner mt-4">
-                            <div>
-                                <x-input-label value="Cliente Atendido" />
-                                <x-text-input name="clientes[${state.clienteCount}][cliente_atendido]" class="w-full" />
-                            </div>
-                            <div>
-                                <x-input-label value="Valor (R$)" />
-                                <x-text-input name="clientes[${state.clienteCount}][valor]" type="number" step="0.01" class="w-full cliente-valor" />
-                            </div>
-                            <div class="md:col-span-2">
-                                <x-input-label value="Observação" />
-                                <textarea name="clientes[${state.clienteCount}][observacao]" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-600 dark:text-white"></textarea>
-                            </div>
-                        </div>
-                    `;
-                    elements.wrappers.clientes.insertAdjacentHTML('beforeend', html);
-                    
-                    // Configura listener para o novo campo de valor
-                    const newInput = elements.wrappers.clientes.lastElementChild.querySelector('.cliente-valor');
-                    newInput.addEventListener('input', () => privateMethods.calculateClinicaTotal());
-                    
-                    state.clienteCount++;
-                });
-                
-                // Listener para cálculo automático
-                elements.wrappers.clientes.addEventListener('input', (e) => {
-                    if (e.target.matches('input[name^="clientes"][name$="[valor]"]')) {
-                        privateMethods.calculateClinicaTotal();
-                    }
-                });
-                
-                // Listener para taxa de correio
-                elements.calculos.taxaCorreio.valor.addEventListener('input', () => {
-                    privateMethods.calculateClinicaTotal();
-                });
-            },
-            
-            setupMedicoListeners() {
-            // Listener para adicionar horário
-            elements.buttons.addHorario.addEventListener('click', () => {
-                const html = `
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 horario-item bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner mt-4">
-                        <div>
-                            <x-input-label value="Data" />
-                            <x-text-input name="med_horarios[${state.horarioCount}][data]" type="date" class="w-full" />
-                        </div>
-                        <div>
-                            <x-input-label value="Entrada" />
-                            <x-text-input name="med_horarios[${state.horarioCount}][entrada]" type="time" class="w-full entrada" />
-                        </div>
-                        <div>
-                            <x-input-label value="Saída Almoço" />
-                            <x-text-input name="med_horarios[${state.horarioCount}][saida_almoco]" type="time" class="w-full saida-almoco" />
-                        </div>
-                        <div>
-                            <x-input-label value="Retorno Almoço" />
-                            <x-text-input name="med_horarios[${state.horarioCount}][retorno_almoco]" type="time" class="w-full retorno-almoco" />
-                        </div>
-                        <div>
-                            <x-input-label value="Saída" />
-                            <x-text-input name="med_horarios[${state.horarioCount}][saida]" type="time" class="w-full saida" />
-                        </div>
-                        <div class="md:col-span-2">
-                            <x-input-label value="Valor por Hora (R$)" />
-                            <x-text-input name="med_horarios[${state.horarioCount}][valor_hora]" type="number" step="0.01" class="w-full valor-hora" />
-                        </div>
-                        <div class="md:col-span-2">
-                            <x-input-label value="Total (R$)" />
-                            <x-text-input name="med_horarios[${state.horarioCount}][total]" type="number" step="0.01" class="w-full total" readonly />
-                        </div>
-                        <div class="md:col-span-1">
-                            <x-input-label value="Horas" />
-                            <x-text-input name="med_horarios[${state.horarioCount}][horas_trabalhadas]" type="text" class="w-full horas-trabalhadas" readonly />
-                        </div>
-                    </div>
-                `;
-                elements.wrappers.horarios.insertAdjacentHTML('beforeend', html);
-                
-                // Configura os listeners para o novo item
-                const newItem = elements.wrappers.horarios.lastElementChild;
-                privateMethods.setupDayListeners(newItem);
-                
-                state.horarioCount++;
-            });
-
-            // Listeners para campos condicionais
-            elements.calculos.medico.deslocamento.valor.addEventListener('input', () => {
-                privateMethods.calculateMedicoTotal();
-            });
-            
-            elements.calculos.medico.almoco.valor.addEventListener('input', () => {
-                privateMethods.calculateMedicoTotal();
-            });
-            
-            elements.calculos.medico.correios.valor.addEventListener('input', () => {
-                privateMethods.calculateMedicoTotal();
-            });
-        },
-        };
-        
-        // Inicialização
-        function init() {
-            // Configura listeners para alternar entre formulários
-            elements.radioButtons.clinica.addEventListener('change', () => {
-                state.currentForm = 'clinica';
-                privateMethods.toggleFormVisibility();
-                privateMethods.updateFormStyles();
-            });
-            
-            elements.radioButtons.medico.addEventListener('change', () => {
-                state.currentForm = 'medico';
-                privateMethods.toggleFormVisibility();
-                privateMethods.updateFormStyles();
-            });
-            
-            // Configura listeners específicos de cada formulário
-            privateMethods.setupClinicaListeners();
-            privateMethods.setupMedicoListeners();
-            privateMethods.setupConditionalFields();
-            
-            // Configura listeners para o primeiro item de horário
-            const firstItem = elements.wrappers.horarios.querySelector('.horario-item');
-            if (firstItem) {
-                privateMethods.setupDayListeners(firstItem);
-            }
-            
-            // Inicializa os estilos
-            privateMethods.updateFormStyles();
-            
-            // Calcula totais iniciais
-            privateMethods.calculateClinicaTotal();
-            privateMethods.calculateMedicoTotal();
-        }
-        
-        // Executa a inicialização
-        init();
-        
-        // API pública
-        return {
-            getCurrentForm() {
-                return state.currentForm;
-            },
-            
-            recalculateTotals() {
-                if (state.currentForm === 'clinica') {
-                    privateMethods.calculateClinicaTotal();
-                } else {
-                    privateMethods.calculateMedicoTotal();
-                }
-            }
-        };
-    }
-    
-    return {
-        getInstance() {
-            if (!instance) {
-                instance = createInstance();
-            }
-            return instance;
-        }
-    };
-})();
-
-// Inicializa o FormManager quando o DOM estiver pronto
+// Inicializa o gerenciador de tipo de nota
 document.addEventListener('DOMContentLoaded', () => {
-    FormManager.getInstance();
+  TipoNotaManager.init();
 });
 </script>
 </x-app-layout>
