@@ -43,7 +43,7 @@ return new class extends Migration
             $table->date('data_entregue_financeiro')->nullable(); // Novo campo data entregue para financeiro
             $table->string('mes')->nullable(); // Ex: "05/2025"
             $table->date('vencimento_prorrogado')->nullable();
-            $table->text('obervacao')->nullable(); // Ex: "05/2025"
+            $table->text('observacao')->nullable(); // Ex: "05/2025"
             $table->enum('tipo_pagamento', ['boleto', 'deposito', 'pix'])->nullable();
             $table->json('dados_bancarios')->nullable(); // Pode armazenar banco, agência, conta, etc.
             $table->enum('status', ['lancada', 'aprovada_chefia', 'confirmada_financeiro', 'rejeitada'])->default('lancada');

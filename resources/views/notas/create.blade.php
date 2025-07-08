@@ -8,12 +8,20 @@
     <div class="py-10">
         <div class="max-w-5xl mx-auto bg-white dark:bg-gray-800 shadow-xl rounded-xl p-8">
         @if ($errors->any())
-            <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
-                <ul class="list-disc list-inside text-red-600">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
+                <div class="flex items-center">
+                    <svg class="h-5 w-5 text-red-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                    <h3 class="text-lg font-medium text-red-800">Corrija os seguintes erros para continuar</h3>
+                </div>
+                <div class="mt-2 pl-8">
+                    <ul class="list-disc text-red-700 space-y-1">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
             </div>
         @endif
 <form action="{{ route('notas.store') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
@@ -31,11 +39,18 @@
             </label>
             
             <input type="radio" name="tipo_nota" id="tipo_medico" value="medico" class="hidden peer">
-            <label for="tipo_medico" id="label_medico" class="px-6 py-3 text-sm font-medium rounded-r-lg border border-gray-200
+            <label for="tipo_medico" id="label_medico" class="px-6 py-3 text-sm font-medium border border-gray-200
                 bg-white text-gray-900 border-gray-200
                 hover:bg-gray-50
                 cursor-pointer transition-all duration-200 ease-in-out">
                 Médico
+            </label>
+            <input type="radio" name="tipo_nota" id="tipo_prestador" value="prestador" class="hidden peer">
+            <label for="tipo_prestador" id="label_prestador" class="px-6 py-3 text-sm font-medium rounded-r-lg border border-gray-200
+                bg-white text-gray-900 border-gray-200
+                hover:bg-gray-50
+                cursor-pointer transition-all duration-200 ease-in-out">
+                Prestador
             </label>
         </div>
     </div>
@@ -71,7 +86,6 @@
                     @endforeach
                 </select>
 
-
                 <x-input-label for="vencimento_original" value="Vencimento Original" />
                 <x-text-input name="vencimento_original" id="vencimento_original" type="date" class="w-full" />
 
@@ -90,15 +104,15 @@
                     </div>
                 </div>
 
-            <x-input-label for="arquivo_nf" value="Arquivos da NF (PDFs)" />
-            <input 
-                type="file" 
-                name="arquivo_nf[]" 
-                id="arquivo_nf" 
-                multiple 
-                accept="application/pdf" 
-                class="w-full dark:bg-gray-700 dark:text-white border-gray-300 rounded-md"
-            />
+                <x-input-label for="arquivo_nf" value="Arquivos da NF (PDFs)" />
+                <input 
+                    type="file" 
+                    name="arquivo_nf[]" 
+                    id="arquivo_nf" 
+                    multiple 
+                    accept="application/pdf" 
+                    class="w-full dark:bg-gray-700 dark:text-white border-gray-300 rounded-md"
+                />
             </div>
             @error('arquivo_nf')
                 <div class="alert alert-danger">{{ $message }}</div>
@@ -112,11 +126,11 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 cliente-item bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner">
                     <div>
                         <x-input-label value="Cliente Atendido" />
-                        <x-text-input name="clientes[0][cliente_atendido]" class="w-full" />
+                        <x-text-input name="clientes[0][cliente_atendido]" class="w-full" required />
                     </div>
                     <div>
                         <x-input-label value="Valor (R$)" />
-                        <x-text-input name="clientes[0][valor]" type="number" step="0.01" class="w-full" />
+                        <x-text-input name="clientes[0][valor]" type="number" step="0.01" class="w-full" required />
                     </div>
                     <div class="md:col-span-2">
                         <x-input-label value="Observação" />
@@ -132,7 +146,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             <x-input-label for="valor_total" value="Valor Total (R$)" />
             <x-text-input name="valor_total" id="valor_total" class="w-full" type="number" step="0.01" />
 
@@ -254,12 +268,12 @@
                                 <x-input-label value="Valor por Hora (R$)" />
                                 <x-text-input name="med_horarios[0][valor_hora]" type="number" step="0.01" class="w-full valor-hora" />
                             </div>
-                            <div class="md:col-span-3">
+                            <div class="md:col-span-2">
                                 <x-input-label value="Total (R$)" />
                                 <x-text-input name="med_horarios[0][total]" type="number" step="0.01" class="w-full total" readonly />
                             </div>
-                            <div class="md:col-span-2">
-                                <x-input-label value="Horas Trabalhadas" />
+                            <div class="md:col-span-1">
+                                <x-input-label value="Horas" />
                                 <x-text-input name="med_horarios[0][horas_trabalhadas]" type="text" class="w-full horas-trabalhadas" readonly />
                             </div>
                         </div>
@@ -309,11 +323,153 @@
                 
                 <x-input-label for="med_observacao" value="Observação" />
                 <textarea name="med_observacao" id="med_observacao" rows="3" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white"></textarea>
-
             </div>
         </div>
 
         {{-- Botão de envio para formulário Médico --}}
+        <div class="text-right pt-4">
+            <x-primary-button>Salvar Nota</x-primary-button>
+        </div>
+    </div>
+
+    {{-- Formulário para Prestador --}}
+    <div id="prestador-form" class="hidden">
+        {{-- Seção: Informações da Nota --}}
+        <div class="border-b border-gray-300 pb-6">
+            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">Informações da Nota</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <x-input-label for="prest_numero_nf" value="Número da NF" />
+                <x-text-input name="prest_numero_nf" id="prest_numero_nf" class="w-full" />
+
+                <x-input-label for="prest_prestador" value="Prestador" />
+                <x-text-input name="prest_prestador" id="prest_prestador" class="w-full" />
+
+                <x-input-label for="prest_cnpj" value="CNPJ" />
+                <x-text-input name="prest_cnpj" id="prest_cnpj" class="w-full" />
+
+                <x-input-label for="prest_cidade" value="Cidade" />
+                <x-text-input name="prest_cidade" id="prest_cidade" type="text" class="w-full" />
+
+                <x-input-label for="prest_estado" value="Estado" />
+                <x-text-input name="prest_estado" id="prest_estado" type="text" class="w-full" />
+
+                <x-input-label for="prest_regiao" value="Região do Brasil" />
+                <select name="prest_regiao" id="prest_regiao" class="w-full rounded border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">Selecione</option>
+                    @foreach(['Norte', 'Nordeste', 'Centro-Oeste', 'Sudeste', 'Sul'] as $regiao)
+                        <option value="{{ $regiao }}">{{ $regiao }}</option>
+                    @endforeach
+                </select>
+
+                <x-input-label for="prest_vencimento_original" value="Vencimento Original" />
+                <x-text-input name="prest_vencimento_original" id="prest_vencimento_original" type="date" class="w-full" />
+
+                <x-input-label for="prest_vencimento_prorrogado" value="Prorrogação (se houver)" />
+                <x-text-input name="prest_vencimento_prorrogado" id="prest_vencimento_prorrogado" type="date" class="w-full" />
+
+                <x-input-label for="prest_mes" value="Mês de Referência (MM/AAAA)" />
+                <x-text-input name="prest_mes" id="prest_mes" placeholder="MM/AAAA" class="w-full" />
+
+                <div class="md:col-span-2">
+                    <x-input-label for="prest_taxa_correio" value="Taxa de Correio?" />
+                    <div class="flex items-center mt-2">
+                        <input type="checkbox" name="prest_taxa_correio" id="prest_taxa_correio" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" value="1">
+                        <x-input-label for="prest_valor_taxa_correio" value="Valor da Taxa (R$)" class="ml-4 mr-2" />
+                        <x-text-input name="prest_valor_taxa_correio" id="prest_valor_taxa_correio" type="number" step="0.01" class="w-32" disabled />
+                    </div>
+                </div>
+
+                <x-input-label for="prest_arquivo_nf" value="Arquivos da NF (PDFs)" />
+                <input 
+                    type="file" 
+                    name="prest_arquivo_nf[]" 
+                    id="prest_arquivo_nf" 
+                    multiple 
+                    accept="application/pdf" 
+                    class="w-full dark:bg-gray-700 dark:text-white border-gray-300 rounded-md"
+                />
+            </div>
+            @error('prest_arquivo_nf')
+                <div class="alert alert-danger">{{ $message }}</div>
+            @enderror
+        </div>
+
+        {{-- Seção: Clientes Atendidos --}}
+        <div class="border-b border-gray-300 pb-6">
+            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">Clientes Atendidos</h3>
+            <div id="prest-clientes-wrapper" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 cliente-item bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner">
+                    <div>
+                        <x-input-label value="Cliente Atendido" />
+                        <x-text-input name="prest_clientes[0][cliente_atendido]" class="w-full" required />
+                    </div>
+                    <div>
+                        <x-input-label value="Valor (R$)" />
+                        <x-text-input name="prest_clientes[0][valor]" type="number" step="0.01" class="w-full" required />
+                    </div>
+                    <div class="md:col-span-2">
+                        <x-input-label value="Observação" />
+                        <textarea name="prest_clientes[0][observacao]" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-600 dark:text-white"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="button" id="add-prest-cliente" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-md">
+                    + Adicionar Cliente
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <x-input-label for="prest_valor_total" value="Valor Total (R$)" />
+            <x-text-input name="prest_valor_total" id="prest_valor_total" class="w-full" type="number" step="0.01" />
+
+            <x-input-label for="prest_tipo_pagamento" value="Tipo de Pagamento" />
+            <select name="prest_tipo_pagamento" id="prest_tipo_pagamento" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                <option value="">Selecione</option>
+                <option value="boleto">Boleto</option>
+                <option value="deposito">Depósito</option>
+                <option value="pix">Pix</option>
+            </select>
+
+            <x-input-label for="prest_dados_bancarios" value="Dados Bancários (se aplicável)" />
+            <textarea name="prest_dados_bancarios" id="prest_dados_bancarios" rows="3" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white"></textarea>
+            
+            <x-input-label for="prest_observacao" value="Observação" />
+            <textarea name="prest_observacao" id="prest_observacao" rows="3" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white"></textarea>
+
+            <div class="md:col-span-2">
+                <x-input-label value="Glosar nota?" />
+                <div class="flex items-center mt-2">
+                    <div class="flex items-center mr-4">
+                        <input type="radio" name="prest_glosar" id="prest_glosar_sim" value="1" 
+                            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <x-input-label for="prest_glosar_sim" value="Sim" class="ml-2" />
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" name="prest_glosar" id="prest_glosar_nao" value="0"
+                            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" checked>
+                        <x-input-label for="prest_glosar_nao" value="Não" class="ml-2" />
+                    </div>
+                </div>
+            </div>
+
+            <div id="glosaPrestadorCampos" class="md:col-span-2" style="display: none;">
+                <div class="mt-4">
+                    <x-input-label for="prest_glosa_motivo" value="Motivo da Glosa" />
+                    <textarea name="prest_glosa_motivo" id="prest_glosa_motivo" rows="3" 
+                            class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"></textarea>
+                </div>
+
+                <div class="mt-4">
+                    <x-input-label for="prest_glosa_valor" value="Valor da Glosa (R$)" />
+                    <x-text-input type="number" step="0.01" name="prest_glosa_valor" id="prest_glosa_valor" class="w-full" />
+                </div>
+            </div>
+        </div>
+
+        {{-- Botão de envio para formulário Prestador --}}
         <div class="text-right pt-4">
             <x-primary-button>Salvar Nota</x-primary-button>
         </div>
@@ -328,6 +484,7 @@ class FormManager {
     this.state = {
       currentForm: 'clinica',
       clienteCount: 1,
+      prestClienteCount: 1,
       horarioCount: 1
     };
 
@@ -341,29 +498,39 @@ class FormManager {
     this.elements = {
       forms: {
         clinica: document.getElementById('clinica-form'),
-        medico: document.getElementById('medico-form')
+        medico: document.getElementById('medico-form'),
+        prestador: document.getElementById('prestador-form')
       },
       radioButtons: {
         clinica: document.getElementById('tipo_clinica'),
-        medico: document.getElementById('tipo_medico')
+        medico: document.getElementById('tipo_medico'),
+        prestador: document.getElementById('tipo_prestador')
       },
       labels: {
         clinica: document.getElementById('label_clinica'),
-        medico: document.getElementById('label_medico')
+        medico: document.getElementById('label_medico'),
+        prestador: document.getElementById('label_prestador')
       },
       buttons: {
         addCliente: document.getElementById('add-cliente'),
+        addPrestCliente: document.getElementById('add-prest-cliente'),
         addHorario: document.getElementById('add-horario')
       },
       wrappers: {
         clientes: document.getElementById('clientes-wrapper'),
+        prestClientes: document.getElementById('prest-clientes-wrapper'),
         horarios: document.getElementById('med-horarios-wrapper')
       },
       calculos: {
         valorTotal: document.getElementById('valor_total'),
+        prestValorTotal: document.getElementById('prest_valor_total'),
         taxaCorreio: {
           checkbox: document.getElementById('taxa_correio'),
           valor: document.getElementById('valor_taxa_correio')
+        },
+        prestTaxaCorreio: {
+          checkbox: document.getElementById('prest_taxa_correio'),
+          valor: document.getElementById('prest_valor_taxa_correio')
         },
         medico: {
           deslocamento: {
@@ -389,12 +556,16 @@ class FormManager {
     // Listeners para troca de formulários
     this.elements.radioButtons.clinica.addEventListener('change', () => this.switchForm('clinica'));
     this.elements.radioButtons.medico.addEventListener('change', () => this.switchForm('medico'));
+    this.elements.radioButtons.prestador.addEventListener('change', () => this.switchForm('prestador'));
 
     // Listeners para formulário clínica
     this.setupClinicaListeners();
     
     // Listeners para formulário médico
     this.setupMedicoListeners();
+    
+    // Listeners para formulário prestador
+    this.setupPrestadorListeners();
     
     // Listeners para campos condicionais
     this.setupConditionalFieldsListeners();
@@ -423,6 +594,7 @@ class FormManager {
   toggleFormVisibility() {
     this.elements.forms.clinica.classList.toggle('hidden', this.state.currentForm !== 'clinica');
     this.elements.forms.medico.classList.toggle('hidden', this.state.currentForm !== 'medico');
+    this.elements.forms.prestador.classList.toggle('hidden', this.state.currentForm !== 'prestador');
   }
 
   updateFormStyles() {
@@ -436,92 +608,176 @@ class FormManager {
 
     toggleClasses(this.elements.labels.clinica, this.state.currentForm === 'clinica');
     toggleClasses(this.elements.labels.medico, this.state.currentForm === 'medico');
+    toggleClasses(this.elements.labels.prestador, this.state.currentForm === 'prestador');
   }
 
-// Métodos para formulário clínica
-setupClinicaListeners() {
-  if (!this.elements.buttons.addCliente) return;
+  // Métodos para formulário clínica
+  setupClinicaListeners() {
+    if (!this.elements.buttons.addCliente) return;
 
-  // Listener para adicionar cliente
-  this.elements.buttons.addCliente.addEventListener('click', () => this.addCliente());
-  
-  // Listener delegado para cálculo automático
-  this.elements.wrappers.clientes.addEventListener('input', (e) => {
-    if (e.target.matches('input[name^="clientes"][name$="[valor]"]')) {
-      this.calculateClinicaTotal();
+    // Listener para adicionar cliente
+    this.elements.buttons.addCliente.addEventListener('click', () => this.addCliente());
+    
+    // Listener delegado para cálculo automático
+    this.elements.wrappers.clientes.addEventListener('input', (e) => {
+      if (e.target.matches('input[name^="clientes"][name$="[valor]"]')) {
+        this.calculateClinicaTotal();
+      }
+    });
+    
+    // Listener para taxa de correio
+    if (this.elements.calculos.taxaCorreio?.valor) {
+      this.elements.calculos.taxaCorreio.valor.addEventListener('input', () => this.calculateClinicaTotal());
     }
-  });
-  
-  // Listener para taxa de correio
-  if (this.elements.calculos.taxaCorreio?.valor) {
-    this.elements.calculos.taxaCorreio.valor.addEventListener('input', () => this.calculateClinicaTotal());
+    
+    // Listener para glosa
+    document.querySelectorAll('input[name="glosar"]').forEach(radio => {
+      radio.addEventListener('change', () => this.calculateClinicaTotal());
+    });
+    
+    document.getElementById('glosa_valor')?.addEventListener('input', () => this.calculateClinicaTotal());
   }
-  
-  // Listener para glosa
-  document.querySelectorAll('input[name="glosar"]').forEach(radio => {
-    radio.addEventListener('change', () => this.calculateClinicaTotal());
-  });
-  
-  document.getElementById('glosa_valor')?.addEventListener('input', () => this.calculateClinicaTotal());
-}
 
-addCliente() {
-  const clienteHTML = `
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 cliente-item bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner mt-4">
-      <div>
-        <x-input-label value="Cliente Atendido" />
-        <x-text-input name="clientes[${this.state.clienteCount}][cliente_atendido]" class="w-full" />
+  addCliente() {
+    const clienteHTML = `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 cliente-item bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner mt-4">
+        <div>
+          <x-input-label value="Cliente Atendido" />
+          <x-text-input name="clientes[${this.state.clienteCount}][cliente_atendido]" class="w-full" />
+        </div>
+        <div>
+          <x-input-label value="Valor (R$)" />
+          <x-text-input name="clientes[${this.state.clienteCount}][valor]" type="number" step="0.01" class="w-full cliente-valor" />
+        </div>
+        <div class="md:col-span-2">
+          <x-input-label value="Observação" />
+          <textarea name="clientes[${this.state.clienteCount}][observacao]" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-600 dark:text-white"></textarea>
+        </div>
       </div>
-      <div>
-        <x-input-label value="Valor (R$)" />
-        <x-text-input name="clientes[${this.state.clienteCount}][valor]" type="number" step="0.01" class="w-full cliente-valor" />
+    `;
+    
+    this.elements.wrappers.clientes.insertAdjacentHTML('beforeend', clienteHTML);
+    
+    // Configura listener para o novo campo de valor
+    const newInput = this.elements.wrappers.clientes.lastElementChild.querySelector('.cliente-valor');
+    newInput.addEventListener('input', () => this.calculateClinicaTotal());
+    
+    this.state.clienteCount++;
+  }
+
+  calculateClinicaTotal() {
+    let total = 0;
+
+    // 1. Somar valores dos clientes
+    const valoresClientes = this.elements.wrappers.clientes.querySelectorAll('input[name^="clientes"][name$="[valor]"]');
+    valoresClientes.forEach(input => {
+      total += parseFloat(input.value) || 0;
+    });
+
+    // 2. Adicionar taxa de correio se marcada
+    if (this.elements.calculos.taxaCorreio?.checkbox?.checked) {
+      total += parseFloat(this.elements.calculos.taxaCorreio.valor.value) || 0;
+    }
+
+    // 3. Subtrair valor da glosa se aplicável
+    const glosaAtiva = document.querySelector('input[name="glosar"][value="1"]')?.checked;
+    const valorGlosa = parseFloat(document.getElementById('glosa_valor')?.value) || 0;
+    
+    if (glosaAtiva && valorGlosa > 0) {
+      total -= valorGlosa;
+      total = Math.max(total, 0); // Garante que não fique negativo
+    }
+
+    // 4. Atualizar o campo de total
+    if (this.elements.calculos.valorTotal) {
+      this.elements.calculos.valorTotal.value = total.toFixed(2);
+    }
+  }
+
+  // Métodos para formulário prestador
+  setupPrestadorListeners() {
+    if (!this.elements.buttons.addPrestCliente) return;
+
+    // Listener para adicionar cliente
+    this.elements.buttons.addPrestCliente.addEventListener('click', () => this.addPrestCliente());
+    
+    // Listener delegado para cálculo automático
+    this.elements.wrappers.prestClientes.addEventListener('input', (e) => {
+      if (e.target.matches('input[name^="prest_clientes"][name$="[valor]"]')) {
+        this.calculatePrestadorTotal();
+      }
+    });
+    
+    // Listener para taxa de correio
+    if (this.elements.calculos.prestTaxaCorreio?.valor) {
+      this.elements.calculos.prestTaxaCorreio.valor.addEventListener('input', () => this.calculatePrestadorTotal());
+    }
+    
+    // Listener para glosa
+    document.querySelectorAll('input[name="prest_glosar"]').forEach(radio => {
+      radio.addEventListener('change', () => this.calculatePrestadorTotal());
+    });
+    
+    document.getElementById('prest_glosa_valor')?.addEventListener('input', () => this.calculatePrestadorTotal());
+  }
+
+  addPrestCliente() {
+    const clienteHTML = `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 cliente-item bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner mt-4">
+        <div>
+          <x-input-label value="Cliente Atendido" />
+          <x-text-input name="prest_clientes[${this.state.prestClienteCount}][cliente_atendido]" class="w-full" />
+        </div>
+        <div>
+          <x-input-label value="Valor (R$)" />
+          <x-text-input name="prest_clientes[${this.state.prestClienteCount}][valor]" type="number" step="0.01" class="w-full prest-cliente-valor" />
+        </div>
+        <div class="md:col-span-2">
+          <x-input-label value="Observação" />
+          <textarea name="prest_clientes[${this.state.prestClienteCount}][observacao]" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-600 dark:text-white"></textarea>
+        </div>
       </div>
-      <div class="md:col-span-2">
-        <x-input-label value="Observação" />
-        <textarea name="clientes[${this.state.clienteCount}][observacao]" class="w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-600 dark:text-white"></textarea>
-      </div>
-    </div>
-  `;
-  
-  this.elements.wrappers.clientes.insertAdjacentHTML('beforeend', clienteHTML);
-  
-  // Configura listener para o novo campo de valor
-  const newInput = this.elements.wrappers.clientes.lastElementChild.querySelector('.cliente-valor');
-  newInput.addEventListener('input', () => this.calculateClinicaTotal());
-  
-  this.state.clienteCount++;
-}
-
-calculateClinicaTotal() {
-  let total = 0;
-
-  // 1. Somar valores dos clientes
-  const valoresClientes = this.elements.wrappers.clientes.querySelectorAll('input[name^="clientes"][name$="[valor]"]');
-  valoresClientes.forEach(input => {
-    total += parseFloat(input.value) || 0;
-  });
-
-  // 2. Adicionar taxa de correio se marcada
-  if (this.elements.calculos.taxaCorreio?.checkbox?.checked) {
-    total += parseFloat(this.elements.calculos.taxaCorreio.valor.value) || 0;
+    `;
+    
+    this.elements.wrappers.prestClientes.insertAdjacentHTML('beforeend', clienteHTML);
+    
+    // Configura listener para o novo campo de valor
+    const newInput = this.elements.wrappers.prestClientes.lastElementChild.querySelector('.prest-cliente-valor');
+    newInput.addEventListener('input', () => this.calculatePrestadorTotal());
+    
+    this.state.prestClienteCount++;
   }
 
-  // 3. Subtrair valor da glosa se aplicável
-  const glosaAtiva = document.querySelector('input[name="glosar"][value="1"]')?.checked;
-  const valorGlosa = parseFloat(document.getElementById('glosa_valor')?.value) || 0;
-  
-  if (glosaAtiva && valorGlosa > 0) {
-    total -= valorGlosa;
-    total = Math.max(total, 0); // Garante que não fique negativo
+  calculatePrestadorTotal() {
+    let total = 0;
+
+    // 1. Somar valores dos clientes
+    const valoresClientes = this.elements.wrappers.prestClientes.querySelectorAll('input[name^="prest_clientes"][name$="[valor]"]');
+    valoresClientes.forEach(input => {
+      total += parseFloat(input.value) || 0;
+    });
+
+    // 2. Adicionar taxa de correio se marcada
+    if (this.elements.calculos.prestTaxaCorreio?.checkbox?.checked) {
+      total += parseFloat(this.elements.calculos.prestTaxaCorreio.valor.value) || 0;
+    }
+
+    // 3. Subtrair valor da glosa se aplicável
+    const glosaAtiva = document.querySelector('input[name="prest_glosar"][value="1"]')?.checked;
+    const valorGlosa = parseFloat(document.getElementById('prest_glosa_valor')?.value) || 0;
+    
+    if (glosaAtiva && valorGlosa > 0) {
+      total -= valorGlosa;
+      total = Math.max(total, 0); // Garante que não fique negativo
+    }
+
+    // 4. Atualizar o campo de total
+    if (this.elements.calculos.prestValorTotal) {
+      this.elements.calculos.prestValorTotal.value = total.toFixed(2);
+    }
   }
 
-  // 4. Atualizar o campo de total
-  if (this.elements.calculos.valorTotal) {
-    this.elements.calculos.valorTotal.value = total.toFixed(2);
-  }
-}
-
-  // Métodos para formulário médico
+  // Métodos para formulário médico (mantido igual)
   setupMedicoListeners() {
     if (!this.elements.buttons.addHorario) return;
 
@@ -733,6 +989,14 @@ calculateClinicaTotal() {
       );
     }
 
+    // Campos condicionais - Prestador
+    if (this.elements.calculos.prestTaxaCorreio) {
+      setupConditionalField(
+        this.elements.calculos.prestTaxaCorreio.checkbox,
+        this.elements.calculos.prestTaxaCorreio.valor
+      );
+    }
+
     // Campos condicionais - Médico
     const medicoFields = this.elements.calculos.medico;
     if (medicoFields) {
@@ -744,10 +1008,16 @@ calculateClinicaTotal() {
 
   // Método auxiliar para calcular o total do formulário atual
   calculateCurrentFormTotal() {
-    if (this.state.currentForm === 'clinica') {
-      this.calculateClinicaTotal();
-    } else {
-      this.calculateMedicoTotal();
+    switch (this.state.currentForm) {
+      case 'clinica':
+        this.calculateClinicaTotal();
+        break;
+      case 'medico':
+        this.calculateMedicoTotal();
+        break;
+      case 'prestador':
+        this.calculatePrestadorTotal();
+        break;
     }
   }
 }
@@ -755,12 +1025,35 @@ calculateClinicaTotal() {
 // Inicialização quando o DOM estiver pronto
 document.addEventListener('DOMContentLoaded', () => {
   new FormManager();
+  GlosaManager.init();
 });
 
 /**
  * Glosa Manager - Gerenciador independente para campos de glosa
  */
 class GlosaManager {
+  static init() {
+    // Configura listeners para os radio buttons de glosa
+    document.querySelectorAll('input[name="glosar"], input[name="med_glosar"], input[name="prest_glosar"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        const formType = this.getFormType(e.target.name);
+        this.toggle(formType, e.target.value === '1');
+      });
+    });
+
+    // Auto mostrar glosa se já vier com valor preenchido (edição)
+    this.checkPreFilledGlosa('clinica', 'glosa_valor', 'glosar');
+    this.checkPreFilledGlosa('medico', 'med_glosa_valor', 'med_glosar');
+    this.checkPreFilledGlosa('prestador', 'prest_glosa_valor', 'prest_glosar');
+  }
+
+  static getFormType(fieldName) {
+    if (fieldName === 'glosar') return 'clinica';
+    if (fieldName === 'med_glosar') return 'medico';
+    if (fieldName === 'prest_glosar') return 'prestador';
+    return '';
+  }
+
   static toggle(formType, show) {
     const glosaCampos = document.getElementById(`glosa${this.capitalizeFirstLetter(formType)}Campos`);
     if (glosaCampos) {
@@ -772,68 +1065,13 @@ class GlosaManager {
     return string.charAt(0).toUpperCase() + string.slice(1);
   }
 
-  static init() {
-    // Configura listeners para os radio buttons de glosa
-    document.querySelectorAll('input[name="glosar"], input[name="med_glosar"]').forEach(radio => {
-      radio.addEventListener('change', (e) => {
-        const formType = e.target.name === 'glosar' ? 'clinica' : 'medico';
-        this.toggle(formType, e.target.value === '1');
-      });
-    });
-
-    // Auto mostrar glosa se já vier com valor preenchido (edição)
-    this.checkPreFilledGlosa('clinica', 'glosa_valor', 'glosar');
-    this.checkPreFilledGlosa('medico', 'med_glosa_valor', 'med_glosar');
-  }
-
   static checkPreFilledGlosa(formType, valorId, radioName) {
     const glosaValor = parseFloat(document.getElementById(valorId)?.value) || 0;
     if (glosaValor > 0) {
       document.querySelector(`input[name="${radioName}"][value="1"]`).checked = true;
       this.toggle(formType, true);
     }
-    }
-    }
-
-// Inicializa o gerenciador de glosa
-document.addEventListener('DOMContentLoaded', () => {
-  GlosaManager.init();
-});
-
-/**
- * TipoNota Manager - Gerenciador para tipo de nota
- */
-class TipoNotaManager {
-  static check() {
-    const tipoNota = document.querySelector('input[name="tipo_nota"]:checked')?.value;
-    
-    // Mostra/oculta os formulários principais
-    document.getElementById('clinica-form').style.display = tipoNota === 'clinica' ? 'block' : 'none';
-    document.getElementById('medico-form').style.display = tipoNota === 'medico' ? 'block' : 'none';
-    
-    // Reseta os campos de glosa quando muda o tipo
-    if (tipoNota === 'clinica') {
-      document.querySelector('input[name="glosar"][value="0"]').checked = true;
-      GlosaManager.toggle('clinica', false);
-    } else if (tipoNota === 'medico') {
-      document.querySelector('input[name="med_glosar"][value="0"]').checked = true;
-      GlosaManager.toggle('medico', false);
-    }
-  }
-
-  static init() {
-    this.check();
-
-    // Configura listeners para os radio buttons de tipo de nota
-    document.querySelectorAll('input[name="tipo_nota"]').forEach(radio => {
-      radio.addEventListener('change', this.check.bind(this));
-    });
   }
 }
-
-// Inicializa o gerenciador de tipo de nota
-document.addEventListener('DOMContentLoaded', () => {
-  TipoNotaManager.init();
-});
 </script>
 </x-app-layout>

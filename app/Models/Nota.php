@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Nota extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     protected $fillable = [
         // Campos comuns
@@ -52,6 +54,7 @@ class Nota extends Model
         'med_cobrou_almoco',
         'med_valor_almoco',
         'med_almoco_inicio',
+        'observacao',
         'med_almoco_fim',
         'med_reembolso_correios',
         'med_valor_correios',
@@ -74,6 +77,7 @@ class Nota extends Model
         'vencimento_prorrogado' => 'date',
         'aprovado_chefia_em' => 'datetime',
         'confirmado_financeiro_em' => 'datetime',
+        'arquivo_nf' => 'array',
     ];
 
     public function notaClientes()

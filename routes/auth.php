@@ -36,31 +36,34 @@ Route::middleware('guest')->group(function () {
         ->name('password.store');
 });
 Route::middleware(['auth', 'role:contas'])->group(function () {
-    Route::get('/notas', [NotaController::class, 'index'])->name('notas.index');
-    Route::get('/notas/create', [NotaController::class, 'create'])->name('notas.create');
-    Route::post('/notas', [NotaController::class, 'store'])->name('notas.store');
-    Route::get('/notas/{nota}/edit', [NotaController::class, 'edit'])->name('notas.edit');
-    Route::put('/notas/{nota}', [NotaController::class, 'update'])->name('notas.update');
-    Route::delete('/notas/{nota}', [NotaController::class, 'destroy'])->name('notas.destroy');
+
 });
 
 Route::middleware(['auth', 'chefia'])->prefix('chefia')->name('chefia.')->group(function () {
 
 });
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/notas', [NotaController::class, 'index'])->name('notas.index');
+    Route::get('/notas/create', [NotaController::class, 'create'])->name('notas.create');
+    Route::post('/notas', [NotaController::class, 'store'])->name('notas.store');
+    Route::get('/notas/{nota}/edit', [NotaController::class, 'edit'])->name('notas.edit');
+    Route::put('/notas/{nota}', [NotaController::class, 'update'])->name('notas.update');
+    Route::delete('/notas/{nota}', [NotaController::class, 'destroy'])->name('notas.destroy');
+
     Route::post('notas/{nota}/aprovar', [NotaController::class, 'aprovar'])->name('chefia.notas.aprovar');
     Route::post('notas/{nota}/rejeitar', [NotaController::class, 'rejeitar'])->name('chefia.notas.rejeitar');
-    Route::get('/notas/{nota}/comprovante', [NotaController::class, 'baixarComprovante'])->name('notas.comprovante');
-
-Route::middleware(['auth', 'role:financeiro'])->group(function () {
-    // rotas do Rickelme
-});
 
     Route::post('notas/{nota}/aceitar', [NotaController::class, 'aceitar'])->name('financeiro.notas.aceitar');
     Route::post('notas/{nota}/recusar', [NotaController::class, 'recusar'])->name('financeiro.notas.recusar');
 
-    Route::get('/notas/{nota}/comprovante', [NotaController::class, 'showComprovante'])->name('notas.comprovante')->middleware('auth');
+    Route::get('/notas/{nota}/comprovante', [NotaController::class, 'baixarComprovante'])->name('notas.comprovante');
     Route::get('/chefia/notas/{nota}/detalhes', [NotaController::class, 'detalhes'])->name('notas.detalhes');
+});
+
+Route::middleware(['auth', 'role:financeiro'])->group(function () {
+    // rotas do Rickelme
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)
