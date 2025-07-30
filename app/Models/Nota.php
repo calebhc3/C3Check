@@ -78,6 +78,7 @@ class Nota extends Model
         'aprovado_chefia_em' => 'datetime',
         'confirmado_financeiro_em' => 'datetime',
         'arquivo_nf' => 'array',
+        'glosar' => 'boolean',
     ];
 
     public function notaClientes()
@@ -98,6 +99,11 @@ class Nota extends Model
     public function scopeMedicos($query)
     {
         return $query->where('tipo_nota', 'medico');
+    }
+
+    public function scopPrestadores($query)
+    {
+        return $query->where('tipo_nota', 'prestador');
     }
 }
 

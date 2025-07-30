@@ -26,8 +26,12 @@
                     </select>
                 </div>
                 <div class="flex items-end">
-                    <x-primary-button class="ml-2">Filtrar</x-primary-button>
+                    <x-primary-button class="ml-0">Filtrar</x-primary-button>
                 </div>
+                <x-secondary-button class="ml-2" onclick="window.location.reload()">
+                    <i class="fas fa-sync-alt mr-1"></i> Atualizar
+                </x-secondary-button>
+
             </div>
         </div>
 
@@ -63,12 +67,20 @@
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             @foreach ($notasPendentes as $nota)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                            {{ $nota->tipo_nota === 'clinica' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' }}">
-                                            {{ $nota->tipo_nota === 'clinica' ? 'Clínica' : 'Médico' }}
-                                        </span>
-                                    </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @php
+                                    $tipoNota = [
+                                        'clinica' => ['bg' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', 'label' => 'Clínica'],
+                                        'medico' => ['bg' => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200', 'label' => 'Médico'],
+                                        'prestador' => ['bg' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', 'label' => 'Prestador'],
+                                    ][$nota->tipo_nota] ?? ['bg' => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200', 'label' => ucfirst($nota->tipo_nota)];
+                                @endphp
+
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $tipoNota['bg'] }}">
+                                    {{ $tipoNota['label'] }}
+                                </span>
+                            </td>
+
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm font-medium text-gray-900 dark:text-white">
                                             {{ $nota->tipo_nota === 'clinica' ? $nota->prestador : $nota->med_nome }}
@@ -149,19 +161,27 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Valor</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Data</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Responsável</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Observações</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Visualizar</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             @foreach ($historicoNotas as $nota)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                            {{ $nota->tipo_nota === 'clinica' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' }}">
-                                            {{ $nota->tipo_nota === 'clinica' ? 'Clínica' : 'Médico' }}
+                                        @php
+                                            $tipoNota = [
+                                                'clinica' => ['bg' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', 'label' => 'Clínica'],
+                                                'medico' => ['bg' => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200', 'label' => 'Médico'],
+                                                'prestador' => ['bg' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', 'label' => 'Prestador'],
+                                            ][$nota->tipo_nota] ?? ['bg' => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200', 'label' => ucfirst($nota->tipo_nota)];
+                                        @endphp
+
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $tipoNota['bg'] }}">
+                                            {{ $tipoNota['label'] }}
                                         </span>
                                     </td>
+
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm font-medium text-gray-900 dark:text-white">
                                             {{ $nota->tipo_nota === 'clinica' ? $nota->prestador : $nota->med_nome }}
@@ -179,9 +199,6 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                         {{ \Carbon\Carbon::parse($nota->aprovado_chefia_em)->format('d/m/Y H:i') }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                        {{ $nota->aprovadorChefia->name ?? '-' }}
-                                    </td>
                                     <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                                         @if($nota->status === 'rejeitada')
                                             <div class="text-red-600 dark:text-red-400">
@@ -191,6 +208,11 @@
                                             -
                                         @endif
                                     </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                <button onclick="openNoteModal('{{ $nota->id }}')" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                                    <i class="fas fa-eye"></i> Ver
+                                </button>
+                                </td>
                                 </tr>
                             @endforeach
                         </tbody>

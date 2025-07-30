@@ -41,41 +41,41 @@ class NotaController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-public function store(Request $request)
-{
-    try {
-        $request->validate([
-            'tipo_nota' => 'required|in:clinica,medico,prestador'
-        ]);
+    public function store(Request $request)
+    {
+        try {
+            $request->validate([
+                'tipo_nota' => 'required|in:clinica,medico,prestador'
+            ]);
 
-        $tipoNota = $request->input('tipo_nota');
+            $tipoNota = $request->input('tipo_nota');
 
-        $service = match ($tipoNota) {
-            'clinica' => new NotaClinicaService(),
-            'medico' => new NotaMedicoService(),
-            'prestador' => new NotaPrestadorService(),
-        };
+            $service = match ($tipoNota) {
+                'clinica' => new NotaClinicaService(),
+                'medico' => new NotaMedicoService(),
+                'prestador' => new NotaPrestadorService(),
+            };
 
-        $nota = $service->handle($request);
+            $nota = $service->handle($request);
 
-        return redirect()
-            ->route('notas.detalhes', $nota)
-            ->with('success', 'Nota cadastrada com sucesso!');
-    } catch (ValidationException $e) {
-        return back()
-            ->withErrors($e->validator)
-            ->withInput();
-    } catch (\Exception $e) {
-        Log::error('Erro ao salvar nota: ' . $e->getMessage(), [
-            'exception' => $e,
-            'request' => $request->all()
-        ]);
+            return redirect()
+                ->route('dashboard')
+                ->with('success', 'Nota cadastrada com sucesso!');
+        } catch (ValidationException $e) {
+            return back()
+                ->withErrors($e->validator)
+                ->withInput();
+        } catch (\Exception $e) {
+            Log::error('Erro ao salvar nota: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all()
+            ]);
 
-        return back()
-            ->with('error', 'Erro ao salvar nota: ' . $e->getMessage())
-            ->withInput();
+            return back()
+                ->with('error', 'Erro ao salvar nota: ' . $e->getMessage())
+                ->withInput();
+        }
     }
-}
 
 
     /**

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('notas', function (Blueprint $table) {
             $table->id();
-            $table->enum('tipo_nota', ['clinica', 'medico'])->default('clinica');
+            $table->enum('tipo_nota', ['clinica', 'medico', 'prestador'])->default('clinica');
             // Para médicos
             $table->string('med_nome')->nullable();
             $table->string('med_telefone')->nullable();

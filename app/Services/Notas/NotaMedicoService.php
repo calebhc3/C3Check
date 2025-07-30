@@ -20,7 +20,6 @@ class NotaMedicoService
 
         return DB::transaction(function () use ($validated, $request) {
             $nota = Nota::create($this->mapData($validated));
-            $this->storeArquivos($request, $nota);
             
             Log::info('Nota de médico cadastrada', ['nota_id' => $nota->id]);
             return $nota;
@@ -43,25 +42,22 @@ class NotaMedicoService
             'med_horarios.*.saida_almoco' => 'nullable|date_format:H:i',
             'med_horarios.*.retorno_almoco' => 'nullable|date_format:H:i',
             'med_horarios.*.saida' => 'required|date_format:H:i',
-            'med_horarios.*.valor_hora' => 'required|numeric|min:0',
-            'med_horarios.*.total' => 'required|numeric|min:0',
+            'med_horarios.*.valor_hora' => 'required|min:0',
+            'med_horarios.*.total' => 'required|min:0',
             'med_deslocamento' => 'sometimes|boolean',
-            'med_valor_deslocamento' => 'required_if:med_deslocamento,true|numeric|min:0',
+            'med_valor_deslocamento' => 'required_if:med_deslocamento,true|min:0',
             'med_cobrou_almoco' => 'sometimes|boolean',
-            'med_valor_almoco' => 'required_if:med_cobrou_almoco,true|numeric|min:0',
+            'med_valor_almoco' => 'required_if:med_cobrou_almoco,true|min:0',
             'med_reembolso_correios' => 'sometimes|boolean',
-            'med_valor_correios' => 'required_if:med_reembolso_correios,true|numeric|min:0',
-            'med_valor_total_final' => 'required|numeric|min:0',
-            'med_dados_bancarios' => 'nullable|json',
+            'med_valor_correios' => 'required_if:med_reembolso_correios,true|min:0',
             'med_numero_nf' => 'required|string|max:255',
             'med_vencimento_original' => 'required|date',
             'med_mes' => 'nullable|string|max:7|regex:/^\d{2}\/\d{4}$/',
             'med_vencimento_prorrogado' => 'nullable|date|after_or_equal:med_vencimento_original',
             'med_tipo_pagamento' => 'nullable|in:boleto,deposito,pix',
             'med_observacao' => 'nullable|string|max:1000',
-            'status' => 'required|in:lancada,pendente,cancelada',
-            'arquivo_nf' => 'required|array|min:1',
-            'arquivo_nf.*' => 'file|mimes:pdf|max:10240',
+            'med_valor_total_final' => 'required|min:0',
+            'med_deslocamento' => 'nullable|min:0',
         ];
 
         $messages = [
@@ -72,6 +68,13 @@ class NotaMedicoService
             'med_mes.regex' => 'O mês deve estar no formato MM/AAAA'
         ];
 
+        $request->merge([
+            'med_deslocamento' => filter_var($request->input('med_deslocamento'), FILTER_VALIDATE_BOOLEAN),
+            'med_cobrou_almoco' => filter_var($request->input('med_cobrou_almoco'), FILTER_VALIDATE_BOOLEAN),
+            'med_reembolso_correios' => filter_var($request->input('med_reembolso_correios'), FILTER_VALIDATE_BOOLEAN),
+        ]);
+
+
         return Validator::make($request->all(), $rules, $messages)->validate();
     }
 
@@ -79,20 +82,22 @@ class NotaMedicoService
     {
         $totalHorarios = collect($data['med_horarios'])->sum('total');
 
+        $valorDeslocamento = $data['med_deslocamento'] ? ($data['med_valor_deslocamento'] ?? $data['med_valor_deslocamento_fallback'] ?? 0) : 0;
+        $valorAlmoco = $data['med_cobrou_almoco'] ? ($data['med_valor_almoco'] ?? $data['med_valor_almoco_fallback'] ?? 0) : 0;
+        $valorCorreios = $data['med_reembolso_correios'] ? ($data['med_valor_correios'] ?? $data['med_valor_correios_fallback'] ?? 0) : 0;
+
         $deslocamento = data_get($data, 'med_deslocamento', false);
-        $valorDeslocamento = $deslocamento ? $data['med_valor_deslocamento'] : 0;
 
         $almoco = data_get($data, 'med_cobrou_almoco', false);
-        $valorAlmoco = $almoco ? $data['med_valor_almoco'] : 0;
 
         $correios = data_get($data, 'med_reembolso_correios', false);
-        $valorCorreios = $correios ? $data['med_valor_correios'] : 0;
 
         $totalAdicionais = $valorDeslocamento + $valorAlmoco + $valorCorreios;
 
         $totalCalculado = $totalHorarios + $totalAdicionais;
+        $valorTotalFinal = data_get($data, 'med_valor_total_final', 0);
 
-        if (abs($totalCalculado - $data['med_valor_total_final']) > 0.01) {
+        if (abs($totalCalculado - $valorTotalFinal) > 0.01) {
             throw ValidationException::withMessages([
                 'med_valor_total_final' => 'O valor total não bate com a soma dos horários e adicionais'
             ]);
@@ -104,6 +109,9 @@ class NotaMedicoService
         return [
             'tipo_nota' => 'medico',
             'numero_nf' => $data['med_numero_nf'],
+            'cidade' => $data['cidade'] ?? null,
+            'estado' => $data['estado'] ?? null,
+            'regiao' => $data['regiao'] ?? null,
             'vencimento_original' => $data['med_vencimento_original'],
             'vencimento_prorrogado' => $data['med_vencimento_prorrogado'] ?? null,
             'mes' => $data['med_mes'] ?? null,
@@ -120,29 +128,19 @@ class NotaMedicoService
             'med_local' => $data['med_local'] ?? null,
             'med_horarios' => json_encode($data['med_horarios']),
             'med_valor_total_final' => $data['med_valor_total_final'],
-            'med_deslocamento' => $data['med_deslocamento'] ?? false,
             'med_valor_deslocamento' => $data['med_deslocamento'] ? $data['med_valor_deslocamento'] : 0,
-            'med_cobrou_almoco' => $data['med_cobrou_almoco'] ?? false,
             'med_valor_almoco' => $data['med_cobrou_almoco'] ? $data['med_valor_almoco'] : 0,
-            'med_reembolso_correios' => $data['med_reembolso_correios'] ?? false,
+            'med_deslocamento' => (bool)($data['med_deslocamento'] ?? false),
+            'med_cobrou_almoco' => (bool)($data['med_cobrou_almoco'] ?? false),
+            'med_reembolso_correios' => (bool)($data['med_reembolso_correios'] ?? false),
             'med_valor_correios' => $data['med_reembolso_correios'] ? $data['med_valor_correios'] : 0,
             
             // Campos comuns
             'user_id' => Auth::id(),
-            'status' => $data['status'],
-            'arquivo_nf' => null, // Será preenchido depois
+            'status' => $data['status'] ?? 'lancada',
+            'data_emissao' => now()->format('Y-m-d'),
+
         ];
     }
 
-    protected function storeArquivos(Request $request, Nota $nota): void
-    {
-        $caminhos = [];
-        foreach ($request->file('arquivo_nf') as $arquivo) {
-            $nome = 'NF_'.$nota->id.'_'.time().'_'.$arquivo->getClientOriginalName();
-            $path = $arquivo->storeAs('notas/medico', $nome, 'public');
-            $caminhos[] = $path;
-        }
-        
-        $nota->update(['arquivo_nf' => json_encode($caminhos)]);
-    }
 }

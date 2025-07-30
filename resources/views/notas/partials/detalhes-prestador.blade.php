@@ -36,7 +36,7 @@
                     <p class="text-md mt-3 font-semibold text-red-900 dark:text-red-100">
                         💸 Valor Final Após Glosa: 
                         <span class="text-green-700 dark:text-green-300">
-                            R$ {{ number_format($nota->valor_total, 2, ',', '.') }}
+                            R$ {{ number_format($nota->valor_total - $nota->glosa_valor, 2, ',', '.') }}
                         </span>
                     </p>
                 </div>

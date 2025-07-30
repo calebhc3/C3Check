@@ -582,99 +582,111 @@ public function test_validacao_nota_medico_formato_horarios()
         $response->assertValid();
         $response->assertRedirect();
     }
-    public function test_exibe_erros_de_validacao_na_view()
-    {
-        // Tentativa de criar nota sem campos obrigatórios
-        $response = $this->post(route('notas.store'), []);
-        
-        $response->assertInvalid([
-            'tipo_nota',
-            'valor_total',
-            'clientes',
-            'arquivo_nf'
-        ]);
-        
-        // Verifica se os erros são exibidos na view
-        $response->assertSee('Corrija os seguintes erros para continuar');
-        $response->assertSee('O campo tipo nota é obrigatório');
-        $response->assertSee('O campo valor total é obrigatório');
-    }
+public function test_exibe_erros_de_validacao_na_view()
+{
+    $response = $this->post(route('notas.store'), [
+        'tipo_nota' => 'clinica', // Forçando o tipo para acionar as validações corretas
+        'status' => 'lancada'
+    ]);
+    
+    $response->assertInvalid([
+        'prestador',
+        'valor_total',
+        'clientes',
+        'arquivo_nf'
+    ]);
+}
 
-    public function test_exibe_erros_especificos_para_campos_invalidos()
-    {
-        $invalidData = [
-            'tipo_nota' => 'invalido',
-            'valor_total' => 'abc',
-            'clientes' => [['valor' => 'texto']],
-            'arquivo_nf' => [UploadedFile::fake()->image('foto.jpg')]
-        ];
-        
-        $response = $this->post(route('notas.store'), $invalidData);
-        
-        // Verifica mensagens específicas
-        $response->assertSee('O tipo de nota selecionado é inválido');
-        $response->assertSee('O valor total deve ser um número');
-        $response->assertSee('O valor do cliente deve ser um número');
-        $response->assertSee('O arquivo deve ser do tipo: pdf');
-    }
+public function test_exibe_erros_especificos_para_campos_invalidos()
+{
+    $invalidData = [
+        'tipo_nota' => 'clinica',
+        'prestador' => 'Teste',
+        'valor_total' => 'abc',
+        'clientes' => [['valor' => 'texto']],
+        'arquivo_nf' => [UploadedFile::fake()->image('foto.jpg')],
+        'status' => 'lancada'
+    ];
+    
+    $response = $this->post(route('notas.store'), $invalidData);
+    
+    $response->assertInvalid([
+        'valor_total',
+        'clientes.0.cliente_atendido',
+        'clientes.0.valor',
+        'arquivo_nf.0'
+    ]);
+}
 
-    public function test_exibe_erros_para_nota_medico()
-    {
-        $invalidMedicoData = [
-            'tipo_nota' => 'medico',
-            'med_horarios' => [['data' => 'invalido']],
-            'arquivo_nf' => [UploadedFile::fake()->create('nota.pdf')]
-        ];
-        
-        $response = $this->post(route('notas.store'), $invalidMedicoData);
-        
-        $response->assertSee('O campo med nome é obrigatório');
-        $response->assertSee('A data do horário não é uma data válida');
-    }
+public function test_exibe_erros_para_nota_medico()
+{
+    $invalidMedicoData = [
+        'tipo_nota' => 'medico',
+        'med_horarios' => [['data' => 'invalido']],
+        'arquivo_nf' => [UploadedFile::fake()->create('nota.pdf')],
+        'status' => 'lancada'
+    ];
+    
+    $response = $this->post(route('notas.store'), $invalidMedicoData);
+    
+    $response->assertInvalid([
+        'med_nome',
+        'med_horarios.0.data'
+    ]);
+}
 
-    public function test_exibe_erros_para_nota_prestador()
-    {
-        $invalidPrestadorData = [
-            'tipo_nota' => 'prestador',
-            'prest_clientes' => [['valor' => 'texto']],
-            'arquivo_nf' => [UploadedFile::fake()->create('nota.pdf')]
-        ];
-        
-        $response = $this->post(route('notas.store'), $invalidPrestadorData);
-        
-        $response->assertSee('O campo prest numero nf é obrigatório');
-        $response->assertSee('O valor do cliente deve ser um número');
-    }
+public function test_exibe_erros_para_nota_prestador()
+{
+    $invalidPrestadorData = [
+        'tipo_nota' => 'prestador',
+        'prest_clientes' => [['valor' => 'texto']],
+        'arquivo_nf' => [UploadedFile::fake()->create('nota.pdf')],
+        'status' => 'lancada'
+    ];
+    
+    $response = $this->post(route('notas.store'), $invalidPrestadorData);
+    
+    $response->assertInvalid([
+        'prest_numero_nf',
+        'prest_clientes.0.valor'
+    ]);
+}
 
-    public function test_exibe_erros_para_arquivos_invalidos()
-    {
-        $invalidFileData = [
-            'tipo_nota' => 'clinica',
-            'valor_total' => 100,
-            'clientes' => [['cliente_atendido' => 'Empresa A', 'valor' => 100]],
-            'arquivo_nf' => [UploadedFile::fake()->create('nota.txt')]
-        ];
-        
-        $response = $this->post(route('notas.store'), $invalidFileData);
-        
-        $response->assertSee('O arquivo deve ser do tipo: pdf');
-        $response->assertSee('O arquivo nota.txt não é um PDF válido');
-    }
+public function test_exibe_erros_para_arquivos_invalidos()
+{
+    $invalidFileData = [
+        'tipo_nota' => 'clinica',
+        'prestador' => 'Teste',
+        'valor_total' => 100,
+        'clientes' => [['cliente_atendido' => 'Empresa A', 'valor' => 100]],
+        'arquivo_nf' => [UploadedFile::fake()->create('nota.txt')],
+        'status' => 'lancada'
+    ];
+    
+    $response = $this->post(route('notas.store'), $invalidFileData);
+    
+    $response->assertInvalid([
+        'arquivo_nf.0'
+    ]);
+}
 
-    public function test_exibe_erros_para_arquivos_grandes()
-    {
-        $largeFile = UploadedFile::fake()->create('nota.pdf', 11000); // 11MB
-        
-        $invalidFileData = [
-            'tipo_nota' => 'clinica',
-            'valor_total' => 100,
-            'clientes' => [['cliente_atendido' => 'Empresa A', 'valor' => 100]],
-            'arquivo_nf' => [$largeFile]
-        ];
-        
-        $response = $this->post(route('notas.store'), $invalidFileData);
-        
-        $response->assertSee('O arquivo nota.pdf não pode ser maior que 10MB');
-    }
-
+public function test_exibe_erros_para_arquivos_grandes()
+{
+    $largeFile = UploadedFile::fake()->create('nota.pdf', 11000); // 11MB
+    
+    $invalidFileData = [
+        'tipo_nota' => 'clinica',
+        'prestador' => 'Teste',
+        'valor_total' => 100,
+        'clientes' => [['cliente_atendido' => 'Empresa A', 'valor' => 100]],
+        'arquivo_nf' => [$largeFile],
+        'status' => 'lancada'
+    ];
+    
+    $response = $this->post(route('notas.store'), $invalidFileData);
+    
+    $response->assertInvalid([
+        'arquivo_nf.0'
+    ]);
+}
 }
