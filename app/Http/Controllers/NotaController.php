@@ -15,6 +15,8 @@ use App\Services\Notas\NotaClinicaService;
 use App\Services\Notas\NotaMedicoService;
 use App\Services\Notas\NotaPrestadorService;
 use Illuminate\Foundation\Validation\ValidatesRequests;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\PrimeiraNotaDoDia;
 
 class NotaController extends Controller
 {
@@ -58,6 +60,14 @@ class NotaController extends Controller
 
             $nota = $service->handle($request);
 
+            // Verificar se é a primeira nota do dia
+            $primeiraNotaDoDia = Nota::whereDate('created_at', today())
+                                    ->count() === 1;
+
+            if ($primeiraNotaDoDia) {
+                $this->enviarEmailPrimeiraNotaDoDia($nota);
+            }
+
             return redirect()
                 ->route('dashboard')
                 ->with('success', 'Nota cadastrada com sucesso!');
@@ -77,6 +87,30 @@ class NotaController extends Controller
         }
     }
 
+    protected function enviarEmailPrimeiraNotaDoDia($nota)
+    {
+        try {
+            $destinatario = 'ana.castro@c3saude.com.br';
+            $assunto = 'Primeira Nota do Dia Cadastrada - ' . config('app.name');
+            
+            $dadosEmail = [
+                'tipo_nota' => $nota->tipo_nota,
+                'prestador' => $nota->tipo_nota === 'clinica' ? $nota->prestador : $nota->med_nome,
+                'valor' => number_format($nota->tipo_nota === 'clinica' ? $nota->valor_total : $nota->med_valor_total_final, 2, ',', '.'),
+                'data_criacao' => $nota->created_at->format('d/m/Y H:i'),
+                'responsavel' => $nota->user->name ?? 'Sistema',
+                'link' => route('notas.show', $nota->id),
+                'total_notas_hoje' => Nota::whereDate('created_at', today())->count()
+            ];
+
+            Mail::to($destinatario)->send(new PrimeiraNotaDoDia($dadosEmail));
+            
+        } catch (\Exception $e) {
+            Log::error('Erro ao enviar e-mail da primeira nota do dia: ' . $e->getMessage(), [
+                'nota_id' => $nota->id ?? null
+            ]);
+        }
+    }
 
     /**
      * Show the form for editing the specified resource.

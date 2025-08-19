@@ -65,8 +65,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
-
+    'timezone' => 'America/Sao_Paulo', // ou seu fuso horário local
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration
@@ -78,7 +77,7 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => env('APP_LOCALE', 'pt_BR'),
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 

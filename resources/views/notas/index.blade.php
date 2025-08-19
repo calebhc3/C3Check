@@ -13,11 +13,15 @@
             
             <form method="GET" action="{{ route('dashboard') }}" class="mb-6 flex flex-wrap gap-4 items-end">
                 <div>
+                    <label for="prestador" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Prestador</label>
+                    <input type="text" name="prestador" id="prestador" value="{{ request('prestador') }}" 
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
                     <label for="cnpj" class="block text-sm font-medium text-gray-700 dark:text-gray-300">CNPJ</label>
                     <input type="text" name="cnpj" id="cnpj" value="{{ request('cnpj') }}" 
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 </div>
-
                 <div>
                     <label for="numero_nf" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Número NF</label>
                     <input type="text" name="numero_nf" id="numero_nf" value="{{ request('numero_nf') }}" 
@@ -55,10 +59,9 @@
                                 <th class="px-4 py-3">Prestador</th>
                                 <th class="px-4 py-3">CNPJ</th>
                                 <th class="px-4 py-3">NF</th>
-                                <th class="px-4 py-3">Valor Líquido</th>
+                                <th class="px-4 py-3">Valor</th>
                                 <th class="px-4 py-3">Vencimento</th>
                                 <th class="px-4 py-3">Status</th>
-                                <th class="px-4 py-3">Comprovante</th>
                                 <th class="px-4 py-3">Motivo Rejeição</th>
                                 <th class="px-4 py-3 text-center">Ações</th>
                             </tr>
@@ -91,14 +94,6 @@
                                         <span class="px-2 py-1 text-sm font-semibold rounded-full {{ $statusColors[$nota->status] ?? 'bg-gray-100 text-gray-700' }}">
                                             {{ $statusLabel }}
                                         </span>
-                                    </td>
-                                    <td class="px-4 py-2">
-                                    @if($nota->comprovante_path)
-                                        <a href="{{ route('notas.comprovante', $nota) }}" target="_blank">Clique aqui</a>
-                                    @else
-                                        -
-                                    @endif
-
                                     </td>
                                     <td class="px-4 py-2 text-sm text-red-600 dark:text-red-400">
                                         @if($nota->status === 'rejeitada' && $nota->motivo_rejeicao_chefia)
@@ -133,7 +128,33 @@
                     <div class="mt-4">{{ $notasClinicas->links() }}</div>
                 </div>
             @endif
-
+            {{-- Filtros Médicos --}}
+            <form method="GET" action="{{ route('dashboard') }}" class="mb-6 flex flex-wrap gap-4 items-end">
+                <input type="hidden" name="filter" value="medicos">
+                <div>
+                    <label for="med_nome" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome do médico</label>
+                    <input type="text" name="med_nome" value="{{ request('med_nome') }}" 
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>                
+                <div>
+                    <label for="numero_nf_medico" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Número NF</label>
+                    <input type="text" name="numero_nf_medico" value="{{ request('numero_nf_medico') }}" 
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label for="status_medico" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                    <select name="status_medico" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <option value="">Todos</option>
+                        @foreach (['lancada','aprovada_chefia','confirmada_financeiro','rejeitada','finalizada'] as $status)
+                            <option value="{{ $status }}" @if(request('status_medico') === $status) selected @endif>
+                                {{ ucfirst(str_replace('_', ' ', $status)) }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 dark:hover:bg-green-800">Filtrar Médicos</button>
+            </form>
+            
             <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Notas de Médicos</h3>
             @if ($notasMedicos->isEmpty())
                 <p class="text-gray-600 dark:text-gray-300">Nenhuma nota de médico cadastrada.</p>
@@ -143,11 +164,9 @@
                         <thead>
                             <tr class="bg-gray-100 dark:bg-gray-700 text-left text-sm font-semibold text-gray-700 dark:text-gray-200">
                                 <th class="px-4 py-3">Médico</th>
-                                <th class="px-4 py-3">NF</th>
                                 <th class="px-4 py-3">Valor</th>
                                 <th class="px-4 py-3">Vencimento</th>
                                 <th class="px-4 py-3">Status</th>
-                                <th class="px-4 py-3">Comprovante</th>
                                 <th class="px-4 py-3">Motivo Rejeição</th>
                                 <th class="px-4 py-3 text-center">Ações</th>
                             </tr>
@@ -156,9 +175,19 @@
                             @foreach ($notasMedicos as $nota)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                                     <td class="px-4 py-2">{{ $nota->med_nome }}</td>
-                                    <td class="px-4 py-2">{{ $nota->numero_nf }}</td>
-                                    <td class="px-4 py-2">R$ {{ number_format($nota->valor_total_final, 2, ',', '.') }}</td>
-                                    <td class="px-4 py-2">
+                                    @php
+                                            $horarios = is_array($nota->med_horarios) ? $nota->med_horarios : json_decode($nota->med_horarios, true);
+                                            $totalHorarios = 0;
+                                            if (!empty($horarios)) {
+                                                foreach ($horarios as $h) {
+                                                    $totalHorarios += $h['total'] ?? 0;
+                                                }
+                                            }
+                                        @endphp
+                                        <td class="px-4 py-2">
+                                            R$ {{ number_format($totalHorarios, 2, ',', '.') }}
+                                        </td>
+                                        <td class="px-4 py-2">
                                         {{ $nota->vencimento_prorrogado 
                                             ? \Carbon\Carbon::parse($nota->vencimento_prorrogado)->format('d/m/Y') 
                                             : ($nota->vencimento_original 
@@ -179,16 +208,6 @@
                                         <span class="px-2 py-1 text-sm font-semibold rounded-full {{ $statusColors[$nota->status] ?? 'bg-gray-100 text-gray-700' }}">
                                             {{ $statusLabel }}
                                         </span>
-                                    </td>
-                                    <td class="px-4 py-2">
-                                        @if($nota->status === 'finalizada' && $nota->comprovante_path)
-                                            <a href="{{ route('notas.comprovante', $nota) }}" target="_blank" 
-                                               class="text-blue-600 hover:underline dark:text-blue-400">
-                                                Visualizar
-                                            </a>
-                                        @else
-                                            -
-                                        @endif
                                     </td>
                                     <td class="px-4 py-2 text-sm text-red-600 dark:text-red-400">
                                         @if($nota->status === 'rejeitada' && $nota->motivo_rejeicao_chefia)
@@ -224,6 +243,37 @@
                 </div>
             @endif
 
+            {{-- Filtros Prestadores --}}
+            <form method="GET" action="{{ route('dashboard') }}" class="mb-6 flex flex-wrap gap-4 items-end">
+                <input type="hidden" name="filter" value="prestadores">
+                <div>
+                    <label for="nome_prestador" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Prestador</label>
+                    <input type="text" name="nome_prestador" value="{{ request('nome_prestador') }}" 
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label for="cnpj_prestador" class="block text-sm font-medium text-gray-700 dark:text-gray-300">CNPJ</label>
+                    <input type="text" name="cnpj_prestador" value="{{ request('cnpj_prestador') }}" 
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label for="numero_nf_prestador" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Número NF</label>
+                    <input type="text" name="numero_nf_prestador" value="{{ request('numero_nf_prestador') }}"  
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label for="status_prestador" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                    <select name="status_prestador" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <option value="">Todos</option>
+                        @foreach (['lancada','aprovada_chefia','confirmada_financeiro','rejeitada','finalizada'] as $status)
+                            <option value="{{ $status }}" @if(request('status_prestador') === $status) selected @endif>
+                                {{ ucfirst(str_replace('_', ' ', $status)) }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 dark:hover:bg-green-800">Filtrar Prestadores</button>
+            </form>
             <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Notas de Prestador</h3>
             @if ($notasPrestadores->isEmpty())
                 <p class="text-gray-600 dark:text-gray-300">Nenhuma nota de prestador cadastrada.</p>
@@ -233,12 +283,9 @@
                         <thead>
                             <tr class="bg-gray-100 dark:bg-gray-700 text-left text-sm font-semibold text-gray-700 dark:text-gray-200">
                                 <th class="px-4 py-3">Prestador</th>
-                                <th class="px-4 py-3">CNPJ</th>
-                                <th class="px-4 py-3">NF</th>
-                                <th class="px-4 py-3">Valor Total</th>
+                                <th class="px-4 py-3">Valor</th>
                                 <th class="px-4 py-3">Vencimento</th>
                                 <th class="px-4 py-3">Status</th>
-                                <th class="px-4 py-3">Comprovante</th>
                                 <th class="px-4 py-3">Motivo Rejeição</th>
                                 <th class="px-4 py-3 text-center">Ações</th>
                             </tr>
@@ -247,8 +294,6 @@
                             @foreach ($notasPrestadores as $nota)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                                     <td class="px-4 py-2">{{ $nota->prestador }}</td>
-                                    <td class="px-4 py-2">{{ $nota->cnpj ?? '-' }}</td>
-                                    <td class="px-4 py-2">{{ $nota->numero_nf }}</td>
                                     <td class="px-4 py-2">R$ {{ number_format($nota->valor_total, 2, ',', '.') }}</td>
                                     <td class="px-4 py-2">
                                         {{ $nota->vencimento_prorrogado 
@@ -271,13 +316,6 @@
                                         <span class="px-2 py-1 text-sm font-semibold rounded-full {{ $statusColors[$nota->status] ?? 'bg-gray-100 text-gray-700' }}">
                                             {{ $statusLabel }}
                                         </span>
-                                    </td>
-                                    <td class="px-4 py-2">
-                                        @if($nota->comprovante_path)
-                                            <a href="{{ route('notas.comprovante', $nota) }}" target="_blank">Clique aqui</a>
-                                        @else
-                                            -
-                                        @endif
                                     </td>
                                     <td class="px-4 py-2 text-sm text-red-600 dark:text-red-400">
                                         @if($nota->status === 'rejeitada' && $nota->motivo_rejeicao_chefia)
@@ -311,10 +349,7 @@
                     </table>
                     <div class="mt-4">{{ $notasPrestadores->links() }}</div>
                 </div>
-            @endif
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-                Total de Notas: {{ $notasClinicas->count() + $notasMedicos->count() + $notasPrestadores->count() }}
-            </p>    
+            @endif   
         </div>
     </div>
 </div>

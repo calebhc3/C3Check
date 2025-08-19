@@ -183,6 +183,7 @@ class NotaPrestadorService
             'user_id' => Auth::id(),
             'status' => 'lancada',
             'arquivo_nf' => null,
+            'observacao' => $data['prest_observacao'] ?? null,
         ];
     }
 
